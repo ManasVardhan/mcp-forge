@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="ig1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="ig2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <filter id="is">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#7C3AED" flood-opacity="0.15"/>
+    </filter>
+    <filter id="gl">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="white" filter="url(#is)"/>
+  <circle cx="100" cy="100" r="90" fill="url(#ig2)" opacity="0.05"/>
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#7C3AED" stroke-width="2" opacity="0.12"/>
+
+  <!-- Anvil -->
+  <g transform="translate(100, 125)">
+    <!-- Base -->
+    <path d="M-35,25 L-25,8 L25,8 L35,25 Z" fill="#6B7280"/>
+    <!-- Body -->
+    <rect x="-28" y="-8" width="56" height="18" rx="3" fill="#9CA3AF"/>
+    <!-- Horn -->
+    <path d="M-28,-8 L-44,-12 L-44,-16 L-28,-13 Z" fill="#9CA3AF"/>
+    <!-- Highlight -->
+    <rect x="-26" y="-6" width="52" height="6" rx="2" fill="#D1D5DB" opacity="0.4"/>
+  </g>
+
+  <!-- Hammer -->
+  <g transform="translate(88, 72) rotate(-30)">
+    <!-- Handle -->
+    <rect x="10" y="-28" width="5" height="38" rx="2" fill="#92400E"/>
+    <!-- Head -->
+    <rect x="-2" y="-6" width="28" height="14" rx="3" fill="url(#ig1)"/>
+    <rect x="0" y="-4" width="24" height="5" rx="1.5" fill="white" opacity="0.25"/>
+  </g>
+
+  <!-- Sparks -->
+  <g filter="url(#gl)">
+    <circle cx="78" cy="98" r="2.5" fill="#F97316" opacity="0.9"/>
+    <circle cx="68" cy="88" r="1.8" fill="#FBBF24" opacity="0.8"/>
+    <circle cx="90" cy="92" r="2" fill="#FCD34D" opacity="0.85"/>
+    <circle cx="75" cy="82" r="1.2" fill="#FBBF24" opacity="0.7"/>
+    <circle cx="85" cy="85" r="1.5" fill="#F97316" opacity="0.6"/>
+    <circle cx="65" cy="95" r="1" fill="#FCD34D" opacity="0.7"/>
+  </g>
+
+  <!-- Subtle ring accent -->
+  <circle cx="100" cy="100" r="75" fill="none" stroke="#7C3AED" stroke-width="0.5" opacity="0.08"/>
+</svg>

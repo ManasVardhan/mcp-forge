@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/hero.svg" alt="mcp-forge" width="800">
+</p>
+
 # 🔨 MCP Forge
 
 **Scaffold, test, and publish Model Context Protocol (MCP) servers in seconds.**
