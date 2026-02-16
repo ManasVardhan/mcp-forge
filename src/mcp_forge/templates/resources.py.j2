@@ -1,0 +1,31 @@
+"""Resource handlers for {{ title }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+RESOURCES: list[dict[str, Any]] = [
+    {% for res in resources %}
+    {
+        "uri": "{{ res }}",
+        "name": "{{ res | replace('://', ' ') | replace('/', ' ') | title }}",
+        "mimeType": "text/plain",
+    },
+    {% endfor %}
+]
+
+
+async def handle_resource_read(uri: str) -> dict[str, Any]:
+    """Read a resource by URI."""
+    for resource in RESOURCES:
+        if resource["uri"] == uri:
+            return {
+                "contents": [
+                    {
+                        "uri": uri,
+                        "mimeType": "text/plain",
+                        "text": f"Content for resource: {uri}",
+                    }
+                ]
+            }
+    raise ValueError(f"Unknown resource: {uri}")

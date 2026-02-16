@@ -1,0 +1,42 @@
+# {{ title }}
+
+{{ description }}
+
+## Getting Started
+
+```bash
+pip install -e .
+```
+
+## Running
+
+```bash
+{{ project_name }}
+```
+
+This starts the MCP server over stdio using the JSON-RPC line protocol.
+
+## Tools
+
+{% for tool in tools %}
+- **{{ tool }}** - {{ tool | replace('_', ' ') | title }} tool
+{% endfor %}
+
+{% if resources %}
+## Resources
+
+{% for res in resources %}
+- `{{ res }}`
+{% endfor %}
+{% endif %}
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+---
+
+Generated with [mcp-forge](https://github.com/manasvardhan/mcp-forge) 🔨

@@ -1,0 +1,50 @@
+"""Tool definitions for {{ title }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+TOOLS: list[dict[str, Any]] = [
+    {% for tool in tools %}
+    {
+        "name": "{{ tool }}",
+        "description": "{{ tool | replace('_', ' ') | title }} tool",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Input query for the {{ tool }} tool",
+                }
+            },
+            "required": ["query"],
+        },
+    },
+    {% endfor %}
+]
+
+
+async def handle_tool_call(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Dispatch a tool call by name."""
+    {% for tool in tools %}
+    if name == "{{ tool }}":
+        return await _tool_{{ tool }}(arguments)
+    {% endfor %}
+    raise ValueError(f"Unknown tool: {name}")
+
+
+{% for tool in tools %}
+async def _tool_{{ tool }}(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle the '{{ tool }}' tool."""
+    query = arguments.get("query", "")
+    return {
+        "content": [
+            {
+                "type": "text",
+                "text": f"{{ tool }} result for: {query}",
+            }
+        ]
+    }
+
+
+{% endfor %}

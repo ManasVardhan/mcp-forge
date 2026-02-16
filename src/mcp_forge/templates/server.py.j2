@@ -1,0 +1,108 @@
+"""{{ title }} - MCP Server."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import sys
+from typing import Any
+
+from .tools import TOOLS, handle_tool_call
+{% if resources %}
+from .resources import RESOURCES, handle_resource_read
+{% endif %}
+
+
+class MCPServer:
+    """A Model Context Protocol server for {{ title }}."""
+
+    def __init__(self) -> None:
+        self.server_info = {
+            "name": "{{ project_name }}",
+            "version": "0.1.0",
+        }
+
+    async def handle_request(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Route a JSON-RPC request to the appropriate handler."""
+        method = request.get("method", "")
+        req_id = request.get("id")
+        params = request.get("params", {})
+
+        try:
+            result = await self._dispatch(method, params)
+            return {"jsonrpc": "2.0", "id": req_id, "result": result}
+        except Exception as exc:
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {"code": -32603, "message": str(exc)},
+            }
+
+    async def _dispatch(self, method: str, params: dict[str, Any]) -> Any:
+        match method:
+            case "initialize":
+                return {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {"listChanged": False},
+                        {% if resources %}
+                        "resources": {"subscribe": False, "listChanged": False},
+                        {% endif %}
+                    },
+                    "serverInfo": self.server_info,
+                }
+            case "tools/list":
+                return {"tools": TOOLS}
+            case "tools/call":
+                return await handle_tool_call(
+                    params.get("name", ""), params.get("arguments", {})
+                )
+            {% if resources %}
+            case "resources/list":
+                return {"resources": RESOURCES}
+            case "resources/read":
+                return await handle_resource_read(params.get("uri", ""))
+            {% endif %}
+            case "ping":
+                return {}
+            case _:
+                raise ValueError(f"Unknown method: {method}")
+
+
+# Module-level instance for convenience
+mcp = MCPServer()
+
+
+async def run_stdio() -> None:
+    """Run the server over stdio (JSON-RPC line protocol)."""
+    server = MCPServer()
+    reader = asyncio.StreamReader()
+    protocol = asyncio.StreamReaderProtocol(reader)
+    await asyncio.get_event_loop().connect_read_pipe(lambda: protocol, sys.stdin)
+
+    writer_transport, writer_protocol = await asyncio.get_event_loop().connect_write_pipe(
+        asyncio.streams.FlowControlMixin, sys.stdout
+    )
+    writer = asyncio.StreamWriter(writer_transport, writer_protocol, reader, asyncio.get_event_loop())
+
+    while True:
+        line = await reader.readline()
+        if not line:
+            break
+        try:
+            request = json.loads(line.decode())
+        except json.JSONDecodeError:
+            continue
+        response = await server.handle_request(request)
+        if request.get("id") is not None:
+            writer.write((json.dumps(response) + "\n").encode())
+            await writer.drain()
+
+
+def main() -> None:
+    """Entry point."""
+    asyncio.run(run_stdio())
+
+
+if __name__ == "__main__":
+    main()
