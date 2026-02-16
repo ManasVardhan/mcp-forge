@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero.svg" alt="mcp-forge" width="800">
+  <img src="assets/banner.svg" alt="mcp-forge" width="800">
 </p>
 
 # 🔨 MCP Forge
