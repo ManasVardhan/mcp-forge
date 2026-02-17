@@ -16,7 +16,7 @@
 
 Building MCP servers involves too much boilerplate. Every new server needs the same JSON-RPC handling, tool definitions, resource handlers, Dockerfile, tests, and packaging config. You end up copying from old projects, fixing import paths, and wasting time on plumbing instead of building.
 
-**MCP Forge fixes this.** One command generates a complete, production-ready MCP server project. Another command tests it. Another validates compliance. Another publishes it.
+**MCP Forge fixes this.** One command generates a complete, ready-to-develop MCP server project. Another command tests it. Another validates compliance. Another publishes it.
 
 ## Features
 
@@ -24,7 +24,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
 - 🔍 **Validate** server compliance against the MCP specification
 - 📦 **Publish** to PyPI with a single command
-- 🎨 **Custom templates** with Jinja2 for your own conventions
+- 🎨 **Jinja2-powered scaffolding** with clean, extensible templates
 - 🐳 **Dockerfile** included in every generated project
 - ⚡ **Zero config** needed for standard MCP servers
 
@@ -177,9 +177,9 @@ Make sure you have `build` and `twine` installed:
 pip install mcp-forge[publish]
 ```
 
-## Custom Templates
+## Template Customization
 
-Want to customize the generated code? Fork the repo and modify the templates in `src/mcp_forge/templates/`. The Jinja2 context includes:
+The scaffolding uses Jinja2 templates internally. To customize the generated code, fork the repo and modify the templates in `src/mcp_forge/templates/`. The Jinja2 context includes:
 
 - `project_name` - the project name as given
 - `pkg_name` - Python package name (snake_case)
