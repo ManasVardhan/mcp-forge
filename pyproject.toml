@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-server-forge"
-version = "0.1.0"
+version = "0.1.1"
 description = "Scaffold, test, and publish Model Context Protocol (MCP) servers in seconds"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
-authors = [{ name = "Manas Vardhan" }]
+authors = [{ name = "Manas Vardhan", email = "manasvardhan@gmail.com" }]
 keywords = ["mcp", "model-context-protocol", "scaffold", "cli", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -45,6 +45,8 @@ publish = [
 mcp-forge = "mcp_forge.cli:cli"
 
 [project.urls]
+Documentation = "https://github.com/ManasVardhan/mcp-forge#readme"
+Changelog = "https://github.com/ManasVardhan/mcp-forge/releases"
 Homepage = "https://github.com/manasvardhan/mcp-forge"
 Repository = "https://github.com/manasvardhan/mcp-forge"
 Issues = "https://github.com/manasvardhan/mcp-forge/issues"
