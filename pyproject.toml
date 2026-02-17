@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mcp-forge"
+name = "mcp-server-forge"
 version = "0.1.0"
 description = "Scaffold, test, and publish Model Context Protocol (MCP) servers in seconds"
 readme = "README.md"

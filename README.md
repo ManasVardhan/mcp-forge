@@ -33,7 +33,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 ### Install
 
 ```bash
-pip install mcp-forge
+pip install mcp-server-forge
 ```
 
 ### Create a new MCP server
@@ -174,7 +174,7 @@ mcp-forge publish . --repository testpypi
 Make sure you have `build` and `twine` installed:
 
 ```bash
-pip install mcp-forge[publish]
+pip install mcp-server-forge[publish]
 ```
 
 ## Template Customization
