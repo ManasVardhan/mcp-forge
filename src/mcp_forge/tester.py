@@ -18,6 +18,8 @@ from rich.table import Table
 class TestResult:
     """Result of a single test case."""
 
+    __test__ = False  # Not a pytest test class
+
     name: str
     passed: bool
     message: str = ""
@@ -27,6 +29,8 @@ class TestResult:
 @dataclass
 class TestReport:
     """Aggregate test report."""
+
+    __test__ = False  # Not a pytest test class
 
     results: list[TestResult] = field(default_factory=list)
 
