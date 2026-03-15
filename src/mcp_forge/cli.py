@@ -12,7 +12,7 @@ from rich.console import Console
 from . import __version__
 from .scaffold import scaffold_project
 from .tester import print_report, run_test_suite
-from .validator import validate_project_structure, validate_tool_definitions
+from .validator import validate_project_structure
 
 console = Console()
 
@@ -40,14 +40,18 @@ def new(name: str, tools: str, resources: str, description: str, author: str, ou
 
     console.print(f"\n[bold]🔨 Forging new MCP server: [cyan]{name}[/cyan][/bold]\n")
 
-    project_path = scaffold_project(
-        name=name,
-        output_dir=Path(output_dir),
-        tools=tool_list,
-        resources=resource_list,
-        description=description,
-        author=author,
-    )
+    try:
+        project_path = scaffold_project(
+            name=name,
+            output_dir=Path(output_dir),
+            tools=tool_list,
+            resources=resource_list,
+            description=description,
+            author=author,
+        )
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise SystemExit(1)
 
     console.print(f"[green]✓[/green] Project created at [bold]{project_path}[/bold]\n")
 

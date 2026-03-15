@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
-import os
+import re
 from pathlib import Path
 from typing import Sequence
 
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+# Valid project names: alphanumeric, hyphens, underscores (must start with a letter)
+_PROJECT_NAME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_-]*$")
+
+# Valid tool names: alphanumeric and underscores only
+_TOOL_NAME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*$")
 
 
 def get_template_env() -> Environment:
@@ -30,6 +36,39 @@ def title_case(name: str) -> str:
     return name.replace("-", " ").replace("_", " ").title()
 
 
+def validate_project_name(name: str) -> None:
+    """Validate a project name and raise ValueError if invalid.
+
+    Project names must start with a letter and contain only
+    letters, digits, hyphens, or underscores.
+    """
+    if not name:
+        raise ValueError("Project name cannot be empty.")
+    if not _PROJECT_NAME_RE.match(name):
+        raise ValueError(
+            f"Invalid project name '{name}'. "
+            "Names must start with a letter and contain only "
+            "letters, digits, hyphens, or underscores."
+        )
+
+
+def validate_tool_names(tools: Sequence[str]) -> None:
+    """Validate tool names and raise ValueError if any are invalid.
+
+    Tool names must start with a letter and contain only
+    letters, digits, or underscores (no hyphens).
+    """
+    for tool in tools:
+        if not tool:
+            raise ValueError("Tool name cannot be empty.")
+        if not _TOOL_NAME_RE.match(tool):
+            raise ValueError(
+                f"Invalid tool name '{tool}'. "
+                "Tool names must start with a letter and contain only "
+                "letters, digits, or underscores."
+            )
+
+
 def scaffold_project(
     name: str,
     output_dir: Path | None = None,
@@ -50,7 +89,14 @@ def scaffold_project(
 
     Returns:
         Path to the generated project root.
+
+    Raises:
+        ValueError: If the project name or tool names are invalid.
     """
+    validate_project_name(name)
+    if tools:
+        validate_tool_names(tools)
+
     output_dir = output_dir or Path.cwd()
     project_root = output_dir / name
     pkg_name = snake_case(name)

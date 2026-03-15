@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 
 from mcp_forge.scaffold import scaffold_project, snake_case, title_case
 

@@ -172,6 +172,34 @@ def validate_tool_definitions(tools: list[dict[str, Any]]) -> ValidationReport:
     return report
 
 
+def validate_resource_definitions(resources: list[dict[str, Any]]) -> ValidationReport:
+    """Validate a list of resource definitions against the MCP schema."""
+    report = ValidationReport()
+
+    if not resources:
+        return report
+
+    for i, resource in enumerate(resources):
+        try:
+            jsonschema.validate(resource, RESOURCE_SCHEMA)
+        except jsonschema.ValidationError as exc:
+            report.add_error(
+                "resources",
+                f"Resource #{i} ({resource.get('name', '?')}): {exc.message}",
+            )
+
+    # Check for duplicate URIs
+    uris = [r.get("uri") for r in resources]
+    seen: set[str] = set()
+    for uri in uris:
+        if uri and uri in seen:
+            report.add_error("resources", f"Duplicate resource URI: {uri}")
+        if uri:
+            seen.add(uri)
+
+    return report
+
+
 def validate_initialize_response(response: dict[str, Any]) -> ValidationReport:
     """Validate an initialize response."""
     report = ValidationReport()

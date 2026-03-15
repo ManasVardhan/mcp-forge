@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from mcp_forge.scaffold import get_template_env, scaffold_project, snake_case, title_case
 
