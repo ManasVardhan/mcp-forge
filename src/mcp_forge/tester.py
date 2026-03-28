@@ -93,7 +93,8 @@ class MCPTestClient:
         if not line:
             raise RuntimeError("No response from server")
 
-        return json.loads(line.decode())
+        result: dict[str, Any] = json.loads(line.decode())
+        return result
 
     def send_notification(self, method: str, params: dict[str, Any] | None = None) -> None:
         """Send a JSON-RPC notification (no response expected)."""
