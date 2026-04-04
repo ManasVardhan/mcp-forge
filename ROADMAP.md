@@ -1,4 +1,4 @@
-# Roadmap — mcp-forge
+# Roadmap - mcp-forge
 
 ## v0.2 (Planned)
 
@@ -6,7 +6,7 @@
 Browse and install community-contributed MCP server templates. Publish your own templates with `mcp-forge publish`.
 
 ### 🔥 Hot Reload Dev Server
-Development mode that watches for file changes and automatically restarts your MCP server — no more manual restart cycles.
+Development mode that watches for file changes and automatically restarts your MCP server - no more manual restart cycles.
 
 ### 📖 Claude Desktop Integration Guide
 Step-by-step guide and helper command to register mcp-forge-generated servers with Claude Desktop's configuration.
