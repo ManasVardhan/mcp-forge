@@ -422,5 +422,109 @@ def info(project_dir: str, fmt: str) -> None:
     console.print()
 
 
+def _default_claude_config_path() -> Path:
+    """Return the default Claude Desktop config path for this platform."""
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+    if sys.platform == "win32":
+        import os
+
+        appdata = os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming"))
+        return Path(appdata) / "Claude" / "claude_desktop_config.json"
+    return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
+
+
+@cli.command()
+@click.argument("project_dir", type=click.Path(exists=True), default=".")
+@click.option("--name", "server_name", default=None,
+              help="Server name in the config. Defaults to the project name.")
+@click.option("--cmd", default=None,
+              help="Command to start the server (e.g. 'python -m my_server.server'). "
+                   "Defaults to 'python -m <package>.server'.")
+@click.option("--config", "config_path", type=click.Path(), default=None,
+              help="Path to claude_desktop_config.json. Defaults to the platform location.")
+@click.option("--remove", is_flag=True, help="Remove the server entry instead of adding it.")
+@click.option("--force", is_flag=True, help="Overwrite an existing entry with the same name.")
+@click.option("--dry-run", is_flag=True, help="Print the resulting config without writing.")
+def register(project_dir: str, server_name: str | None, cmd: str | None,
+             config_path: str | None, remove: bool, force: bool, dry_run: bool) -> None:
+    """Register an MCP server with Claude Desktop.
+
+    Adds (or removes with --remove) an entry under "mcpServers" in
+    claude_desktop_config.json, preserving everything else in the file.
+
+    Example: mcp-forge register ./my-server
+    """
+    import json
+    import re
+
+    path = Path(project_dir)
+
+    if server_name is None:
+        pyproject_path = path / "pyproject.toml"
+        if pyproject_path.exists():
+            match = re.search(r'^name\s*=\s*"([^"]+)"', pyproject_path.read_text(), re.MULTILINE)
+            server_name = match.group(1) if match else path.resolve().name
+        else:
+            server_name = path.resolve().name
+
+    target = Path(config_path) if config_path else _default_claude_config_path()
+
+    # Load existing config, preserving unknown keys
+    if target.exists():
+        try:
+            config = json.loads(target.read_text())
+        except json.JSONDecodeError as exc:
+            console.print(f"[red]Could not parse {target}:[/red] {exc}")
+            console.print("[dim]Fix or move the file, then try again. No changes were made.[/dim]")
+            raise SystemExit(1)
+        if not isinstance(config, dict):
+            console.print(f"[red]{target} does not contain a JSON object. No changes were made.[/red]")
+            raise SystemExit(1)
+    else:
+        config = {}
+
+    servers = config.setdefault("mcpServers", {})
+
+    if remove:
+        if server_name not in servers:
+            console.print(f"[yellow]No entry named '{server_name}' in {target}.[/yellow]")
+            raise SystemExit(1)
+        del servers[server_name]
+        action = "Removed"
+    else:
+        if server_name in servers and not force:
+            console.print(
+                f"[red]Entry '{server_name}' already exists in {target}.[/red] "
+                "Use --force to overwrite."
+            )
+            raise SystemExit(1)
+
+        if cmd:
+            parts = cmd.split()
+        else:
+            package = server_name.replace("-", "_")
+            parts = ["python", "-m", f"{package}.server"]
+
+        servers[server_name] = {"command": parts[0], "args": parts[1:]}
+        action = "Registered"
+
+    rendered = json.dumps(config, indent=2)
+
+    if dry_run:
+        console.print(f"[yellow]Dry run, not writing {target}.[/yellow]")
+        click.echo(rendered)
+        return
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(rendered + "\n")
+
+    console.print(f"[green]✓[/green] {action} [bold cyan]{server_name}[/] in {target}")
+    if not remove:
+        entry = servers[server_name]
+        console.print(f"  command: {entry['command']} {' '.join(entry['args'])}")
+        console.print("[dim]Restart Claude Desktop to pick up the change.[/dim]")
+
+
 if __name__ == "__main__":
     cli()

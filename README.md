@@ -99,6 +99,30 @@ mcp-forge publish ./my-server
 mcp-forge publish ./my-server --repository testpypi --dry-run
 ```
 
+### Register with Claude Desktop
+
+```bash
+mcp-forge register ./my-server
+```
+
+Adds your server to `claude_desktop_config.json` so Claude Desktop can launch it. The default config location is detected per platform (macOS, Linux, Windows), and everything else in the file is preserved.
+
+```bash
+# Preview the change without writing
+mcp-forge register ./my-server --dry-run
+
+# Custom launch command and server name
+mcp-forge register ./my-server --name weather --cmd "uv run server.py"
+
+# Overwrite an existing entry
+mcp-forge register ./my-server --force
+
+# Remove the entry again
+mcp-forge register ./my-server --remove
+```
+
+Restart Claude Desktop after registering to pick up the change.
+
 ## Scaffolding
 
 The `new` command generates a complete MCP server with:
