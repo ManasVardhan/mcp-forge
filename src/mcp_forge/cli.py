@@ -10,6 +10,7 @@ import click
 from rich.console import Console
 
 from . import __version__
+from .devserver import DEFAULT_EXTENSIONS, DevServer
 from .scaffold import scaffold_project
 from .tester import MCPTestClient, print_report, run_test_suite
 from .validator import validate_project_structure
@@ -420,6 +421,70 @@ def info(project_dir: str, fmt: str) -> None:
 
     console.print(table)
     console.print()
+
+
+def _project_package_name(path: Path) -> str:
+    """Derive the Python package name for a project directory."""
+    import re
+
+    pyproject_path = path / "pyproject.toml"
+    if pyproject_path.exists():
+        match = re.search(r'^name\s*=\s*"([^"]+)"', pyproject_path.read_text(), re.MULTILINE)
+        if match:
+            return match.group(1).replace("-", "_")
+    return path.resolve().name.replace("-", "_")
+
+
+@cli.command()
+@click.argument("project_dir", type=click.Path(exists=True), default=".")
+@click.option("--cmd", default=None,
+              help="Command to start the server (e.g. 'python -m my_server.server'). "
+                   "Defaults to 'python -m <package>.server'.")
+@click.option("--interval", default=1.0, show_default=True,
+              help="Seconds between file checks.")
+@click.option("--ext", "extensions", default=",".join(DEFAULT_EXTENSIONS), show_default=True,
+              help="Comma-separated file extensions to watch.")
+def dev(project_dir: str, cmd: str | None, interval: float, extensions: str) -> None:
+    """Run an MCP server with hot reload.
+
+    Watches the project for file changes and restarts the server
+    automatically. Also revives the server if it crashes. Stop with Ctrl+C.
+
+    Example: mcp-forge dev ./my-server
+    """
+    path = Path(project_dir)
+
+    if cmd:
+        server_cmd = cmd.split()
+    else:
+        package = _project_package_name(path)
+        server_cmd = [sys.executable, "-m", f"{package}.server"]
+
+    ext_tuple = tuple(
+        e if e.startswith(".") else f".{e}"
+        for e in (part.strip() for part in extensions.split(","))
+        if e
+    )
+
+    try:
+        server = DevServer(
+            server_cmd,
+            path,
+            extensions=ext_tuple,
+            interval=interval,
+            cwd=path,
+            console=console,
+        )
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise SystemExit(1)
+
+    console.print(f"\n[bold]🔥 Hot reload dev server: [cyan]{' '.join(server_cmd)}[/cyan][/bold]")
+    console.print(f"[dim]Watching {path.resolve()} for {', '.join(ext_tuple)} changes "
+                  f"(every {interval}s)[/dim]\n")
+    server.run()
+    if server.gave_up:
+        raise SystemExit(1)
 
 
 def _default_claude_config_path() -> Path:

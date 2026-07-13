@@ -21,6 +21,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 ## Features
 
 - 🏗️ **Scaffold** full MCP server projects from templates in one command
+- 🔥 **Hot reload** dev server that restarts on file changes
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
 - 🔍 **Validate** server compliance against the MCP specification
 - 📦 **Publish** to PyPI with a single command
@@ -85,6 +86,24 @@ mcp-forge test --cmd 'python -m my_server.server'
 │ 7/7 passed  All tests passed!                    │
 └──────────────────────────────────────────────────┘
 ```
+
+### Develop with hot reload
+
+```bash
+mcp-forge dev ./my-server
+```
+
+Starts your server and watches the project for changes. Edit a file, and the server restarts automatically. If the server crashes, it gets revived. Stop with Ctrl+C.
+
+```bash
+# Custom launch command
+mcp-forge dev ./my-server --cmd "uv run server.py"
+
+# Watch different extensions or poll faster
+mcp-forge dev ./my-server --ext py,yaml --interval 0.5
+```
+
+By default it watches `.py`, `.toml`, `.json`, and `.j2` files, skipping `__pycache__`, hidden directories, virtualenvs, and build output.
 
 ### Validate compliance
 
