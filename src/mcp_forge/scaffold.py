@@ -132,26 +132,11 @@ def scaffold_project(
         "dockerfile.j2": project_root / "Dockerfile",
     }
 
+    file_map["project_tests.py.j2"] = project_root / "tests" / f"test_{pkg_name}.py"
+
     for template_name, dest_path in file_map.items():
         template = env.get_template(template_name)
         dest_path.write_text(template.render(**context))
-
-    # Write a basic test file
-    test_content = f'''"""Basic tests for {pkg_name}."""
-
-import importlib
-
-
-def test_import():
-    mod = importlib.import_module("{pkg_name}")
-    assert mod is not None
-
-
-def test_server_module():
-    mod = importlib.import_module("{pkg_name}.server")
-    assert hasattr(mod, "mcp")
-'''
-    (project_root / "tests" / f"test_{pkg_name}.py").write_text(test_content)
 
     # Write .gitignore
     (project_root / ".gitignore").write_text(

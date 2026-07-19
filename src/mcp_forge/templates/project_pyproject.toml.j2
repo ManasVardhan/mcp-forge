@@ -12,6 +12,9 @@ requires-python = ">=3.10"
 authors = [{ name = "{{ author }}" }]
 dependencies = []
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [project.scripts]
 {{ project_name }} = "{{ pkg_name }}.server:main"
 

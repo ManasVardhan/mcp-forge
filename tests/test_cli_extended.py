@@ -77,6 +77,9 @@ class TestNewCommand:
         assert "Next steps" in result.output
         assert "cd steps-server" in result.output
         assert "pip install" in result.output
+        # Regression: rich swallowed [dev] as markup, printing pip install -e '.'
+        assert "pip install -e '.[dev]'" in result.output
+        assert "pytest" in result.output
 
     def test_new_shows_tree(self, tmp_path: Path) -> None:
         runner = CliRunner()

@@ -8,13 +8,13 @@ The `mcp-forge register` command adds or removes servers in `claude_desktop_conf
 ### 🔥 Hot Reload Dev Server (v0.1)
 The `mcp-forge dev` command runs your server and watches project files, restarting automatically on changes (and reviving crashed servers). Configurable watch extensions and poll interval, no extra dependencies. See the README for usage.
 
+### 🧪 Built-in Test Harness (v0.1)
+Scaffolded projects now include an auto-generated pytest suite with mock JSON-RPC tool calls: initialize handshake, tools/list contents, one test per tool, schema assertions, resource reads, and error paths. Projects get a `dev` extra with pytest and the suite passes out of the box.
+
 ## v0.2 (Planned)
 
 ### 🏪 Template Marketplace
 Browse and install community-contributed MCP server templates. Publish your own templates with `mcp-forge publish`.
-
-### 🧪 Built-in Test Harness
-Auto-generated test suite for scaffolded MCP servers with mock tool calls, ensuring your server handles requests correctly out of the box.
 
 ---
 

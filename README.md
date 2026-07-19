@@ -63,9 +63,20 @@ my-server/
 
 ### Test your server
 
+Every scaffolded project ships with a ready-to-run pytest harness in
+`tests/`: one mock JSON-RPC call per tool, initialize handshake checks,
+schema assertions, and error path coverage. It passes out of the box:
+
 ```bash
 cd my-server
-pip install -e .
+pip install -e '.[dev]'
+pytest
+# 11 passed
+```
+
+You can also exercise the server over real stdio with the black-box test runner:
+
+```bash
 mcp-forge test --cmd 'python -m my_server.server'
 ```
 
@@ -181,7 +192,18 @@ MCP Forge uses Jinja2 templates internally. Each generated file comes from a tem
 
 ## Testing
 
-The built-in test harness starts your MCP server as a subprocess and sends JSON-RPC requests over stdio, validating:
+mcp-forge gives you two layers of testing.
+
+**Generated pytest harness.** Every `mcp-forge new` project includes an
+auto-generated `tests/test_<pkg>.py` that drives the server in-process with
+mock JSON-RPC requests: the initialize handshake, `tools/list` contents, a
+`tools/call` per scaffolded tool, input schema assertions, resource reads
+(when resources are scaffolded), and error paths for unknown tools, methods,
+and resources. Run it with `pip install -e '.[dev]' && pytest`, then extend
+the per-tool tests as you implement real logic.
+
+**Black-box test runner.** `mcp-forge test` starts your MCP server as a
+subprocess and sends JSON-RPC requests over stdio, validating:
 
 - **Server startup** and clean shutdown
 - **initialize** response with protocol version, capabilities, and server info

@@ -62,7 +62,9 @@ def new(name: str, tools: str, resources: str, description: str, author: str, ou
     console.print()
     console.print("[dim]Next steps:[/dim]")
     console.print(f"  cd {name}")
-    console.print("  pip install -e .")
+    # Escape the bracket so rich does not parse [dev] as markup and drop it
+    console.print(r"  pip install -e '.\[dev]'")
+    console.print("  pytest  [dim]# run the generated test harness[/dim]")
     console.print(f"  mcp-forge test --cmd 'python -m {name.replace('-', '_')}.server'")
     console.print()
 

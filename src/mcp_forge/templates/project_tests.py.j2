@@ -1,0 +1,113 @@
+"""Auto-generated test harness for {{ title }}.
+
+Exercises the MCP server end to end with mock JSON-RPC requests:
+initialize handshake, tool listing, a call per scaffolded tool, and
+error paths. Extend the per-tool tests as you implement real logic.
+
+Run with: pip install -e '.[dev]' && pytest
+"""
+
+from __future__ import annotations
+
+import asyncio
+import importlib
+from typing import Any
+
+from {{ pkg_name }}.server import MCPServer
+from {{ pkg_name }}.tools import TOOLS
+
+
+def rpc(method: str, params: dict[str, Any] | None = None, req_id: int = 1) -> dict[str, Any]:
+    """Send one JSON-RPC request through a fresh server instance."""
+    server = MCPServer()
+    request = {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
+    return asyncio.run(server.handle_request(request))
+
+
+def test_import() -> None:
+    mod = importlib.import_module("{{ pkg_name }}")
+    assert mod is not None
+
+
+def test_server_module() -> None:
+    mod = importlib.import_module("{{ pkg_name }}.server")
+    assert hasattr(mod, "mcp")
+
+
+def test_initialize_handshake() -> None:
+    response = rpc("initialize")
+    result = response["result"]
+    assert result["protocolVersion"] == "2024-11-05"
+    assert result["serverInfo"]["name"] == "{{ project_name }}"
+    assert "tools" in result["capabilities"]
+
+
+def test_ping() -> None:
+    response = rpc("ping")
+    assert response["result"] == {}
+
+
+def test_request_id_is_echoed() -> None:
+    response = rpc("ping", req_id=42)
+    assert response["id"] == 42
+
+
+def test_tools_list_contains_scaffolded_tools() -> None:
+    response = rpc("tools/list")
+    names = [tool["name"] for tool in response["result"]["tools"]]
+    assert names == [{% for tool in tools %}"{{ tool }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+
+
+def test_tool_schemas_declare_required_query() -> None:
+    for tool in TOOLS:
+        schema = tool["inputSchema"]
+        assert schema["type"] == "object"
+        assert "query" in schema["properties"]
+        assert "query" in schema["required"]
+
+
+{% for tool in tools %}
+def test_tool_{{ tool }}_call() -> None:
+    response = rpc(
+        "tools/call",
+        {"name": "{{ tool }}", "arguments": {"query": "test input"}},
+    )
+    content = response["result"]["content"]
+    assert content, "tool returned no content"
+    assert content[0]["type"] == "text"
+    assert "test input" in content[0]["text"]
+
+
+{% endfor %}
+def test_unknown_tool_returns_error() -> None:
+    response = rpc("tools/call", {"name": "no_such_tool", "arguments": {}})
+    assert "error" in response
+    assert "no_such_tool" in response["error"]["message"]
+
+
+def test_unknown_method_returns_error() -> None:
+    response = rpc("bogus/method")
+    assert "error" in response
+    assert response["error"]["code"] == -32603
+{% if resources %}
+
+
+def test_resources_list() -> None:
+    response = rpc("resources/list")
+    uris = [res["uri"] for res in response["result"]["resources"]]
+    assert uris == [{% for res in resources %}"{{ res }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+
+
+{% for res in resources %}
+def test_resource_read_{{ loop.index }}() -> None:
+    response = rpc("resources/read", {"uri": "{{ res }}"})
+    contents = response["result"]["contents"]
+    assert contents[0]["uri"] == "{{ res }}"
+    assert contents[0]["text"]
+
+
+{% endfor %}
+def test_unknown_resource_returns_error() -> None:
+    response = rpc("resources/read", {"uri": "bogus://nowhere"})
+    assert "error" in response
+{% endif %}
