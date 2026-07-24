@@ -61,6 +61,8 @@ class TestInspect:
             {"result": {"resources": [
                 {"uri": "file://data.txt", "name": "data", "mimeType": "text/plain"},
             ]}},
+            # prompts/list (server without prompt support returns an error)
+            {"error": {"code": -32603, "message": "Unknown method: prompts/list"}},
         ]
 
         result = runner.invoke(cli, ["inspect", "--cmd", "python server.py"])
@@ -84,6 +86,7 @@ class TestInspect:
             }},
             {"result": {"tools": []}},
             {"result": {"resources": []}},
+            {"result": {"prompts": []}},
         ]
 
         result = runner.invoke(cli, ["inspect", "--cmd", "python s.py", "--json-output"])
@@ -107,6 +110,7 @@ class TestInspect:
             }},
             {"result": {"tools": []}},
             {"result": {"resources": []}},
+            {"error": {"code": -32603, "message": "Unknown method: prompts/list"}},
         ]
 
         result = runner.invoke(cli, ["inspect", "--cmd", "python s.py"])
@@ -153,6 +157,7 @@ class TestInspect:
             }},
             {"result": {"tools": tools}},
             {"result": {"resources": []}},
+            {"result": {"prompts": []}},
         ]
 
         result = runner.invoke(cli, ["inspect", "--cmd", "python s.py"])
@@ -174,6 +179,7 @@ class TestInspect:
             }},
             {"result": {"tools": []}},
             {"result": {"resources": []}},
+            {"result": {"prompts": []}},
         ]
 
         result = runner.invoke(cli, ["inspect", "--cmd", "python s.py", "--cwd", str(tmp_path)])

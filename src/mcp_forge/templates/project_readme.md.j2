@@ -30,6 +30,14 @@ This starts the MCP server over stdio using the JSON-RPC line protocol.
 {% endfor %}
 {% endif %}
 
+{% if prompts %}
+## Prompts
+
+{% for prompt in prompts %}
+- **{{ prompt }}** - {{ prompt | replace('_', ' ') | title }} prompt
+{% endfor %}
+{% endif %}
+
 ## Development
 
 ```bash

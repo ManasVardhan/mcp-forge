@@ -1,0 +1,51 @@
+"""Prompt definitions for {{ title }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+PROMPTS: list[dict[str, Any]] = [
+    {% for prompt in prompts %}
+    {
+        "name": "{{ prompt }}",
+        "description": "{{ prompt | replace('_', ' ') | title }} prompt",
+        "arguments": [
+            {
+                "name": "topic",
+                "description": "Topic to focus the {{ prompt }} prompt on",
+                "required": False,
+            }
+        ],
+    },
+    {% endfor %}
+]
+
+
+async def handle_get_prompt(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Dispatch a prompts/get request by prompt name."""
+    {% for prompt in prompts %}
+    if name == "{{ prompt }}":
+        return await _prompt_{{ prompt }}(arguments)
+    {% endfor %}
+    raise ValueError(f"Unknown prompt: {name}")
+
+
+{% for prompt in prompts %}
+async def _prompt_{{ prompt }}(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build the '{{ prompt }}' prompt messages."""
+    topic = arguments.get("topic", "")
+    text = "{{ prompt | replace('_', ' ') | title }} prompt"
+    if topic:
+        text = f"{text} about {topic}"
+    return {
+        "description": "{{ prompt | replace('_', ' ') | title }} prompt",
+        "messages": [
+            {
+                "role": "user",
+                "content": {"type": "text", "text": text},
+            }
+        ],
+    }
+
+
+{% endfor %}

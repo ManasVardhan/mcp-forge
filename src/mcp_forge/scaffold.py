@@ -11,7 +11,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 # Valid project names: alphanumeric, hyphens, underscores (must start with a letter)
 _PROJECT_NAME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_-]*$")
 
-# Valid tool names: alphanumeric and underscores only
+# Valid tool and prompt names: alphanumeric and underscores only
 _TOOL_NAME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*$")
 
 
@@ -69,11 +69,29 @@ def validate_tool_names(tools: Sequence[str]) -> None:
             )
 
 
+def validate_prompt_names(prompts: Sequence[str]) -> None:
+    """Validate prompt names and raise ValueError if any are invalid.
+
+    Prompt names must start with a letter and contain only
+    letters, digits, or underscores (no hyphens).
+    """
+    for prompt in prompts:
+        if not prompt:
+            raise ValueError("Prompt name cannot be empty.")
+        if not _TOOL_NAME_RE.match(prompt):
+            raise ValueError(
+                f"Invalid prompt name '{prompt}'. "
+                "Prompt names must start with a letter and contain only "
+                "letters, digits, or underscores."
+            )
+
+
 def scaffold_project(
     name: str,
     output_dir: Path | None = None,
     tools: Sequence[str] = (),
     resources: Sequence[str] = (),
+    prompts: Sequence[str] = (),
     description: str = "",
     author: str = "",
 ) -> Path:
@@ -84,6 +102,7 @@ def scaffold_project(
         output_dir: Parent directory. Defaults to cwd.
         tools: List of tool names to scaffold.
         resources: List of resource URI patterns to scaffold.
+        prompts: List of prompt names to scaffold.
         description: One-line project description.
         author: Author name for pyproject.toml.
 
@@ -91,11 +110,13 @@ def scaffold_project(
         Path to the generated project root.
 
     Raises:
-        ValueError: If the project name or tool names are invalid.
+        ValueError: If the project name, tool names, or prompt names are invalid.
     """
     validate_project_name(name)
     if tools:
         validate_tool_names(tools)
+    if prompts:
+        validate_prompt_names(prompts)
 
     output_dir = output_dir or Path.cwd()
     project_root = output_dir / name
@@ -119,6 +140,7 @@ def scaffold_project(
         "author": author or "Author",
         "tools": list(tools) if tools else ["hello"],
         "resources": list(resources) if resources else [],
+        "prompts": list(prompts) if prompts else [],
     }
 
     # Map template files to output paths
@@ -126,6 +148,7 @@ def scaffold_project(
         "server.py.j2": src_dir / "server.py",
         "tools.py.j2": src_dir / "tools.py",
         "resources.py.j2": src_dir / "resources.py",
+        "prompts.py.j2": src_dir / "prompts.py",
         "init.py.j2": src_dir / "__init__.py",
         "project_pyproject.toml.j2": project_root / "pyproject.toml",
         "project_readme.md.j2": project_root / "README.md",

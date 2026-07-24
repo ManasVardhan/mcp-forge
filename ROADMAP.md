@@ -11,6 +11,9 @@ The `mcp-forge dev` command runs your server and watches project files, restarti
 ### 🧪 Built-in Test Harness (v0.1)
 Scaffolded projects now include an auto-generated pytest suite with mock JSON-RPC tool calls: initialize handshake, tools/list contents, one test per tool, schema assertions, resource reads, and error paths. Projects get a `dev` extra with pytest and the suite passes out of the box.
 
+### 💬 MCP Prompts Scaffolding (v0.1)
+The `new` command accepts `--prompts` to scaffold MCP prompt definitions: a generated `prompts.py` with prompts/list and prompts/get handlers, server capability wiring, generated tests per prompt, and `mcp-forge inspect` now displays a server's prompts.
+
 ## v0.2 (Planned)
 
 ### 🏪 Template Marketplace

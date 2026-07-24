@@ -20,7 +20,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 
 ## Features
 
-- 🏗️ **Scaffold** full MCP server projects from templates in one command
+- 🏗️ **Scaffold** full MCP server projects (tools, resources, prompts) in one command
 - 🔥 **Hot reload** dev server that restarts on file changes
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
 - 🔍 **Validate** server compliance against the MCP specification
@@ -56,7 +56,8 @@ my-server/
 │       ├── __init__.py
 │       ├── server.py
 │       ├── tools.py
-│       └── resources.py
+│       ├── resources.py
+│       └── prompts.py
 └── tests/
     └── test_my_server.py
 ```
@@ -160,6 +161,7 @@ The `new` command generates a complete MCP server with:
 - A fully functional `server.py` with JSON-RPC request routing
 - Tool definitions and handlers in `tools.py`
 - Resource handlers in `resources.py`
+- Prompt definitions and handlers in `prompts.py` (with `--prompts`)
 - A `pyproject.toml` configured with hatchling
 - A `Dockerfile` for containerized deployment
 - A `README.md` with usage instructions
@@ -171,6 +173,7 @@ The `new` command generates a complete MCP server with:
 mcp-forge new my-server \
   --tools weather,calculator,search \
   --resources "file://data,http://api" \
+  --prompts summarize,code_review \
   --description "My awesome MCP server" \
   --author "Your Name" \
   --output-dir ./projects
@@ -185,6 +188,7 @@ MCP Forge uses Jinja2 templates internally. Each generated file comes from a tem
 | `server.py.j2` | Main server with JSON-RPC routing |
 | `tools.py.j2` | Tool definitions and handlers |
 | `resources.py.j2` | Resource definitions and handlers |
+| `prompts.py.j2` | Prompt definitions and handlers |
 | `project_pyproject.toml.j2` | Package configuration |
 | `project_readme.md.j2` | Project README |
 | `dockerfile.j2` | Docker container config |
@@ -198,9 +202,10 @@ mcp-forge gives you two layers of testing.
 auto-generated `tests/test_<pkg>.py` that drives the server in-process with
 mock JSON-RPC requests: the initialize handshake, `tools/list` contents, a
 `tools/call` per scaffolded tool, input schema assertions, resource reads
-(when resources are scaffolded), and error paths for unknown tools, methods,
-and resources. Run it with `pip install -e '.[dev]' && pytest`, then extend
-the per-tool tests as you implement real logic.
+and prompt gets (when resources or prompts are scaffolded), and error paths
+for unknown tools, methods, resources, and prompts. Run it with
+`pip install -e '.[dev]' && pytest`, then extend the per-tool tests as you
+implement real logic.
 
 **Black-box test runner.** `mcp-forge test` starts your MCP server as a
 subprocess and sends JSON-RPC requests over stdio, validating:
@@ -253,6 +258,7 @@ The scaffolding uses Jinja2 templates internally. To customize the generated cod
 - `author` - author name
 - `tools` - list of tool names
 - `resources` - list of resource URI patterns
+- `prompts` - list of prompt names
 
 ## Development
 

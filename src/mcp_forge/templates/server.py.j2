@@ -11,6 +11,9 @@ from .tools import TOOLS, handle_tool_call
 {% if resources %}
 from .resources import RESOURCES, handle_resource_read
 {% endif %}
+{% if prompts %}
+from .prompts import PROMPTS, handle_get_prompt
+{% endif %}
 
 
 class MCPServer:
@@ -48,6 +51,9 @@ class MCPServer:
                         {% if resources %}
                         "resources": {"subscribe": False, "listChanged": False},
                         {% endif %}
+                        {% if prompts %}
+                        "prompts": {"listChanged": False},
+                        {% endif %}
                     },
                     "serverInfo": self.server_info,
                 }
@@ -62,6 +68,14 @@ class MCPServer:
                 return {"resources": RESOURCES}
             case "resources/read":
                 return await handle_resource_read(params.get("uri", ""))
+            {% endif %}
+            {% if prompts %}
+            case "prompts/list":
+                return {"prompts": PROMPTS}
+            case "prompts/get":
+                return await handle_get_prompt(
+                    params.get("name", ""), params.get("arguments", {})
+                )
             {% endif %}
             case "ping":
                 return {}

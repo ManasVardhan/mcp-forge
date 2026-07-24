@@ -28,16 +28,19 @@ def cli() -> None:
 @click.argument("name")
 @click.option("--tools", "-t", default="", help="Comma-separated list of tool names to scaffold.")
 @click.option("--resources", "-r", default="", help="Comma-separated list of resource URI patterns.")
+@click.option("--prompts", "-p", default="", help="Comma-separated list of prompt names to scaffold.")
 @click.option("--description", "-d", default="", help="Project description.")
 @click.option("--author", "-a", default="", help="Author name.")
 @click.option("--output-dir", "-o", type=click.Path(), default=".", help="Output directory.")
-def new(name: str, tools: str, resources: str, description: str, author: str, output_dir: str) -> None:
+def new(name: str, tools: str, resources: str, prompts: str, description: str, author: str,
+        output_dir: str) -> None:
     """Create a new MCP server project.
 
-    Example: mcp-forge new my-server --tools weather,calculator
+    Example: mcp-forge new my-server --tools weather,calculator --prompts summarize
     """
     tool_list = [t.strip() for t in tools.split(",") if t.strip()] if tools else []
     resource_list = [r.strip() for r in resources.split(",") if r.strip()] if resources else []
+    prompt_list = [p.strip() for p in prompts.split(",") if p.strip()] if prompts else []
 
     console.print(f"\n[bold]🔨 Forging new MCP server: [cyan]{name}[/cyan][/bold]\n")
 
@@ -47,6 +50,7 @@ def new(name: str, tools: str, resources: str, description: str, author: str, ou
             output_dir=Path(output_dir),
             tools=tool_list,
             resources=resource_list,
+            prompts=prompt_list,
             description=description,
             author=author,
         )
@@ -230,6 +234,11 @@ def inspect(cmd: str, cwd: str | None, json_output: bool) -> None:
         resources_resp = client.send_request("resources/list")
         resources = resources_resp.get("result", {}).get("resources", [])
 
+        # List prompts (servers without prompt support return an error,
+        # which leaves the result empty)
+        prompts_resp = client.send_request("prompts/list")
+        prompts = prompts_resp.get("result", {}).get("prompts", [])
+
     except Exception as exc:
         console.print(f"[red]Error communicating with server:[/red] {exc}")
         client.stop()
@@ -244,6 +253,7 @@ def inspect(cmd: str, cwd: str | None, json_output: bool) -> None:
             "capabilities": capabilities,
             "tools": tools,
             "resources": resources,
+            "prompts": prompts,
         }
         click.echo(json_mod.dumps(data, indent=2))
         return
@@ -301,6 +311,26 @@ def inspect(cmd: str, cwd: str | None, json_output: bool) -> None:
                 res.get("mimeType", ""),
             )
         console.print(res_table)
+
+    if prompts:
+        prompt_table = Table(
+            title=f"Prompts ({len(prompts)})",
+            border_style="magenta",
+            show_lines=True,
+        )
+        prompt_table.add_column("Name", style="bold magenta")
+        prompt_table.add_column("Description")
+        prompt_table.add_column("Arguments", style="dim")
+
+        for prompt in prompts:
+            args = prompt.get("arguments", [])
+            arg_names = ", ".join(a.get("name", "?") for a in args) if args else "none"
+            prompt_table.add_row(
+                prompt.get("name", "?"),
+                prompt.get("description", ""),
+                arg_names,
+            )
+        console.print(prompt_table)
 
     console.print()
 

@@ -111,3 +111,35 @@ def test_unknown_resource_returns_error() -> None:
     response = rpc("resources/read", {"uri": "bogus://nowhere"})
     assert "error" in response
 {% endif %}
+{% if prompts %}
+
+
+def test_initialize_declares_prompts_capability() -> None:
+    response = rpc("initialize")
+    assert "prompts" in response["result"]["capabilities"]
+
+
+def test_prompts_list_contains_scaffolded_prompts() -> None:
+    response = rpc("prompts/list")
+    names = [prompt["name"] for prompt in response["result"]["prompts"]]
+    assert names == [{% for prompt in prompts %}"{{ prompt }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+
+
+{% for prompt in prompts %}
+def test_prompt_{{ prompt }}_get() -> None:
+    response = rpc(
+        "prompts/get",
+        {"name": "{{ prompt }}", "arguments": {"topic": "unit testing"}},
+    )
+    messages = response["result"]["messages"]
+    assert messages, "prompt returned no messages"
+    assert messages[0]["role"] == "user"
+    assert "unit testing" in messages[0]["content"]["text"]
+
+
+{% endfor %}
+def test_unknown_prompt_returns_error() -> None:
+    response = rpc("prompts/get", {"name": "no_such_prompt", "arguments": {}})
+    assert "error" in response
+    assert "no_such_prompt" in response["error"]["message"]
+{% endif %}
