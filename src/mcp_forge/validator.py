@@ -75,6 +75,27 @@ RESOURCE_SCHEMA: dict[str, Any] = {
     },
 }
 
+PROMPT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "arguments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": {"type": "string", "minLength": 1},
+                    "description": {"type": "string"},
+                    "required": {"type": "boolean"},
+                },
+            },
+        },
+    },
+}
+
 
 @dataclass
 class ValidationIssue:
@@ -108,6 +129,22 @@ class ValidationReport:
 
     def add_warning(self, category: str, message: str) -> None:
         self.issues.append(ValidationIssue("warning", category, message))
+
+    def merge(self, other: "ValidationReport") -> None:
+        """Absorb all issues from another report."""
+        self.issues.extend(other.issues)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize the report for JSON output."""
+        return {
+            "valid": self.is_valid,
+            "errors": [
+                {"category": i.category, "message": i.message} for i in self.errors
+            ],
+            "warnings": [
+                {"category": i.category, "message": i.message} for i in self.warnings
+            ],
+        }
 
 
 def validate_project_structure(project_dir: Path) -> ValidationReport:
@@ -217,4 +254,131 @@ def validate_tool_result(result: dict[str, Any]) -> ValidationReport:
         jsonschema.validate(result, TOOL_RESULT_SCHEMA)
     except jsonschema.ValidationError as exc:
         report.add_error("tool_result", exc.message)
+    return report
+
+
+def validate_prompt_definitions(prompts: list[dict[str, Any]]) -> ValidationReport:
+    """Validate a list of prompt definitions against the MCP schema."""
+    report = ValidationReport()
+
+    if not prompts:
+        return report
+
+    for i, prompt in enumerate(prompts):
+        try:
+            jsonschema.validate(prompt, PROMPT_SCHEMA)
+        except jsonschema.ValidationError as exc:
+            report.add_error(
+                "prompts",
+                f"Prompt #{i} ({prompt.get('name', '?')}): {exc.message}",
+            )
+
+    # Check for duplicate names
+    names = [p.get("name") for p in prompts]
+    seen: set[str] = set()
+    for name in names:
+        if name and name in seen:
+            report.add_error("prompts", f"Duplicate prompt name: {name}")
+        if name:
+            seen.add(name)
+
+    return report
+
+
+def validate_live_server(server_cmd: list[str], cwd: Path | None = None) -> ValidationReport:
+    """Boot a server and validate its live protocol responses.
+
+    Starts the server, performs the initialize handshake, then checks the
+    initialize response, tool definitions, resource definitions, and prompt
+    definitions against the MCP schemas. Also flags mismatches between
+    declared capabilities and what the list endpoints actually return.
+    """
+    from .tester import MCPTestClient
+
+    report = ValidationReport()
+    client = MCPTestClient(server_cmd, cwd=cwd)
+
+    try:
+        client.start()
+    except Exception as exc:
+        report.add_error("startup", f"Failed to start server: {exc}")
+        return report
+
+    try:
+        init_resp = client.send_request(
+            "initialize",
+            {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "mcp-forge-validator", "version": "0"},
+            },
+        )
+        if "error" in init_resp:
+            report.add_error("initialize", f"initialize returned an error: {init_resp['error']}")
+            return report
+
+        init_result = init_resp.get("result", {})
+        report.merge(validate_initialize_response(init_result))
+        capabilities = init_result.get("capabilities", {})
+
+        client.send_notification("notifications/initialized")
+
+        # Tools
+        tools_resp = client.send_request("tools/list")
+        if "error" in tools_resp:
+            tools: list[dict[str, Any]] = []
+            if "tools" in capabilities:
+                report.add_error(
+                    "tools",
+                    "Server declares the tools capability but tools/list returned an error",
+                )
+        else:
+            tools = tools_resp.get("result", {}).get("tools", [])
+            report.merge(validate_tool_definitions(tools))
+            if tools and "tools" not in capabilities:
+                report.add_warning(
+                    "capabilities",
+                    "Server returns tools but does not declare the tools capability",
+                )
+
+        # Resources
+        resources_resp = client.send_request("resources/list")
+        if "error" in resources_resp:
+            if "resources" in capabilities:
+                report.add_error(
+                    "resources",
+                    "Server declares the resources capability but resources/list "
+                    "returned an error",
+                )
+        else:
+            resources = resources_resp.get("result", {}).get("resources", [])
+            report.merge(validate_resource_definitions(resources))
+            if resources and "resources" not in capabilities:
+                report.add_warning(
+                    "capabilities",
+                    "Server returns resources but does not declare the resources capability",
+                )
+
+        # Prompts
+        prompts_resp = client.send_request("prompts/list")
+        if "error" in prompts_resp:
+            if "prompts" in capabilities:
+                report.add_error(
+                    "prompts",
+                    "Server declares the prompts capability but prompts/list returned an error",
+                )
+        else:
+            prompts = prompts_resp.get("result", {}).get("prompts", [])
+            report.merge(validate_prompt_definitions(prompts))
+            if prompts and "prompts" not in capabilities:
+                report.add_warning(
+                    "capabilities",
+                    "Server returns prompts but does not declare the prompts capability",
+                )
+
+    except Exception as exc:
+        report.add_error("protocol", f"Error communicating with server: {exc}")
+    finally:
+        client.stop()
+
     return report

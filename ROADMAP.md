@@ -14,6 +14,9 @@ Scaffolded projects now include an auto-generated pytest suite with mock JSON-RP
 ### 💬 MCP Prompts Scaffolding (v0.1)
 The `new` command accepts `--prompts` to scaffold MCP prompt definitions: a generated `prompts.py` with prompts/list and prompts/get handlers, server capability wiring, generated tests per prompt, and `mcp-forge inspect` now displays a server's prompts.
 
+### 🩺 Live Protocol Validation (v0.1)
+`mcp-forge validate --cmd` boots the server over stdio and validates its live responses against the MCP schemas: initialize handshake, tools/resources/prompts list payloads, duplicate names, and capability/reality mismatches. A `--json` flag emits a CI-friendly report with a nonzero exit code on errors.
+
 ## v0.2 (Planned)
 
 ### 🏪 Template Marketplace

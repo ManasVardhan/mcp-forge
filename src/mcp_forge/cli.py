@@ -13,7 +13,7 @@ from . import __version__
 from .devserver import DEFAULT_EXTENSIONS, DevServer
 from .scaffold import scaffold_project
 from .tester import MCPTestClient, print_report, run_test_suite
-from .validator import validate_project_structure
+from .validator import validate_live_server, validate_project_structure
 
 console = Console()
 
@@ -109,27 +109,67 @@ def test(cmd: str, cwd: str | None) -> None:
 
 @cli.command()
 @click.argument("project_dir", type=click.Path(exists=True))
-def validate(project_dir: str) -> None:
+@click.option("--cmd", default=None,
+              help="Also boot the server with this command and validate its live "
+                   "protocol responses (initialize, tools, resources, prompts).")
+@click.option("--cwd", type=click.Path(exists=True), default=None,
+              help="Working directory for the server started via --cmd.")
+@click.option("--json", "json_output", is_flag=True,
+              help="Output the report as JSON (CI-friendly).")
+def validate(project_dir: str, cmd: str | None, cwd: str | None, json_output: bool) -> None:
     """Validate an MCP server project for compliance.
 
-    Example: mcp-forge validate ./my-server
+    Checks project structure by default. With --cmd, also starts the
+    server and validates its live responses against the MCP schemas.
+
+    Example: mcp-forge validate ./my-server --cmd 'python -m my_server.server'
     """
+    import json as json_mod
+
     path = Path(project_dir)
-    console.print(f"\n[bold]🔍 Validating: [cyan]{path.name}[/cyan][/bold]\n")
+    display_name = path.resolve().name
 
-    report = validate_project_structure(path)
+    structure_report = validate_project_structure(path)
+    live_report = None
+    if cmd:
+        live_report = validate_live_server(cmd.split(), cwd=Path(cwd) if cwd else path)
 
-    if report.errors:
+    all_valid = structure_report.is_valid and (live_report is None or live_report.is_valid)
+
+    if json_output:
+        data = {
+            "project": display_name,
+            "structure": structure_report.to_dict(),
+            "live": live_report.to_dict() if live_report is not None else None,
+            "valid": all_valid,
+        }
+        click.echo(json_mod.dumps(data, indent=2))
+        if not all_valid:
+            raise SystemExit(1)
+        return
+
+    console.print(f"\n[bold]🔍 Validating: [cyan]{display_name}[/cyan][/bold]\n")
+
+    sections = [("Structure", structure_report)]
+    if live_report is not None:
+        sections.append(("Live protocol", live_report))
+
+    total_errors = 0
+    for title, report in sections:
+        if live_report is not None:
+            console.print(f"  [bold]{title}[/bold]")
         for issue in report.errors:
             console.print(f"  [red]✗[/red] {issue.message}")
-    if report.warnings:
         for issue in report.warnings:
             console.print(f"  [yellow]![/yellow] {issue.message}")
+        if report.is_valid:
+            label = "Live protocol is valid!" if title == "Live protocol" \
+                else "Project structure is valid!"
+            console.print(f"  [green]✓ {label}[/green]")
+        total_errors += len(report.errors)
 
-    if report.is_valid:
-        console.print("  [green]✓ Project structure is valid![/green]")
-    else:
-        console.print(f"\n  [red]{len(report.errors)} error(s) found[/red]")
+    if not all_valid:
+        console.print(f"\n  [red]{total_errors} error(s) found[/red]")
         raise SystemExit(1)
 
     console.print()

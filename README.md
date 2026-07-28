@@ -23,7 +23,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 - 🏗️ **Scaffold** full MCP server projects (tools, resources, prompts) in one command
 - 🔥 **Hot reload** dev server that restarts on file changes
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
-- 🔍 **Validate** server compliance against the MCP specification
+- 🔍 **Validate** server compliance against the MCP specification, statically and live over stdio
 - 📦 **Publish** to PyPI with a single command
 - 🎨 **Jinja2-powered scaffolding** with clean, extensible templates
 - 🐳 **Dockerfile** included in every generated project
@@ -120,7 +120,14 @@ By default it watches `.py`, `.toml`, `.json`, and `.j2` files, skipping `__pyca
 ### Validate compliance
 
 ```bash
+# Static structure checks
 mcp-forge validate ./my-server
+
+# Also boot the server and validate its live protocol responses
+mcp-forge validate ./my-server --cmd 'python -m my_server.server'
+
+# CI-friendly JSON report (exit code 1 on any error)
+mcp-forge validate ./my-server --cmd 'python -m my_server.server' --json
 ```
 
 ### Publish
@@ -225,6 +232,19 @@ The `validate` command checks your project for:
 - Tool definitions match the MCP schema (name, description, inputSchema)
 - Initialize responses include all required fields
 - Tool results contain valid content arrays
+
+With `--cmd`, validation goes live: the server is booted over stdio and its
+actual responses are checked against the MCP schemas:
+
+- Initialize handshake returns protocolVersion, capabilities, and serverInfo
+- `tools/list`, `resources/list`, and `prompts/list` payloads match the spec
+- No duplicate tool, resource, or prompt names
+- Declared capabilities match reality (a declared capability whose list
+  endpoint errors is an error; served items without a declared capability
+  are a warning)
+
+Add `--json` for a machine-readable report with a nonzero exit code on
+errors, ready for CI gates.
 
 ## Publishing
 
