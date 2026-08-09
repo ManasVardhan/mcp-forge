@@ -4,13 +4,13 @@ A step-by-step guide to get up and running from scratch.
 
 ## Prerequisites
 
-You need **Python 3.10 or newer** installed on your machine.
+You need **Python 3.9 or newer** installed on your machine.
 
 **Check if you have Python:**
 ```bash
 python3 --version
 ```
-If you see `Python 3.10.x` or higher, you're good. If not, download it from [python.org](https://www.python.org/downloads/).
+If you see `Python 3.9.x` or higher, you're good. If not, download it from [python.org](https://www.python.org/downloads/).
 
 ## Step 1: Clone the repository
 

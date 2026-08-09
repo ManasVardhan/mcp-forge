@@ -5,7 +5,7 @@
 
 **Scaffold, test, and publish Model Context Protocol (MCP) servers in seconds.**
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
 [![PyPI](https://img.shields.io/badge/pypi-v0.1.0-orange.svg)]()
@@ -223,6 +223,13 @@ subprocess and sends JSON-RPC requests over stdio, validating:
 - **tools/call** executes a tool and returns content
 - **ping** responds correctly
 - **Unknown methods** return proper JSON-RPC errors
+
+Add `--json` for a machine-readable report (pass/fail counts plus every
+result and raw response), with a nonzero exit code on failures for CI:
+
+```bash
+mcp-forge test --cmd 'python -m my_server.server' --json
+```
 
 ## Validation
 

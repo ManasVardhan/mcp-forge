@@ -208,3 +208,83 @@ class TestPrintTree:
         assert "tools.py" in result.output
         assert "resources.py" in result.output
         assert "Dockerfile" in result.output
+
+
+# ---------------------------------------------------------------------------
+# mcp-forge test --json
+# ---------------------------------------------------------------------------
+
+
+class TestTestJsonOutput:
+    @patch("mcp_forge.cli.run_test_suite")
+    def test_json_passing(self, mock_run: MagicMock) -> None:
+        import json
+
+        mock_run.return_value = _make_passing_report()
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            "test", "--cmd", "python -m my_server.server", "--json",
+        ])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["passed"] == 7
+        assert data["failed"] == 0
+        assert data["total"] == 7
+        assert data["results"][0]["name"] == "server_start"
+        assert data["results"][0]["passed"] is True
+
+    @patch("mcp_forge.cli.run_test_suite")
+    def test_json_failing_exits_1(self, mock_run: MagicMock) -> None:
+        import json
+
+        mock_run.return_value = _make_failing_report()
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            "test", "--cmd", "python -m my_server.server", "--json",
+        ])
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["failed"] == 1
+        failing = [r for r in data["results"] if not r["passed"]]
+        assert failing[0]["name"] == "initialize"
+        assert failing[0]["message"] == "Missing fields"
+
+    @patch("mcp_forge.cli.run_test_suite")
+    def test_json_omits_rich_banner(self, mock_run: MagicMock) -> None:
+        mock_run.return_value = _make_passing_report()
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            "test", "--cmd", "python -m my_server.server", "--json",
+        ])
+        assert "Testing MCP server" not in result.output
+
+
+# ---------------------------------------------------------------------------
+# TestReport / TestResult serialization
+# ---------------------------------------------------------------------------
+
+
+class TestReportSerialization:
+    def test_result_to_dict(self) -> None:
+        res = TestResult("ping", True, "Ping OK", {"jsonrpc": "2.0", "id": 1, "result": {}})
+        data = res.to_dict()
+        assert data == {
+            "name": "ping",
+            "passed": True,
+            "message": "Ping OK",
+            "response": {"jsonrpc": "2.0", "id": 1, "result": {}},
+        }
+
+    def test_report_to_dict_counts(self) -> None:
+        report = _make_failing_report()
+        data = report.to_dict()
+        assert data["passed"] == 2
+        assert data["failed"] == 1
+        assert data["total"] == 3
+        assert len(data["results"]) == 3
+
+    def test_report_to_dict_json_roundtrip(self) -> None:
+        import json
+
+        data = json.loads(json.dumps(_make_passing_report().to_dict()))
+        assert data["total"] == 7

@@ -89,15 +89,26 @@ def _print_tree(path: Path, prefix: str = "", is_last: bool = True) -> None:
 @cli.command()
 @click.option("--cmd", required=True, help="Command to start the MCP server (e.g. 'python -m my_server.server').")
 @click.option("--cwd", type=click.Path(exists=True), default=None, help="Working directory for the server.")
-def test(cmd: str, cwd: str | None) -> None:
+@click.option("--json", "json_output", is_flag=True,
+              help="Output the report as JSON (CI-friendly).")
+def test(cmd: str, cwd: str | None, json_output: bool) -> None:
     """Run the MCP test suite against a server.
 
     Example: mcp-forge test --cmd 'python -m my_server.server'
     """
-    console.print(f"\n[bold]🧪 Testing MCP server: [cyan]{cmd}[/cyan][/bold]\n")
+    import json as json_mod
 
     server_cmd = cmd.split()
     cwd_path = Path(cwd) if cwd else None
+
+    if json_output:
+        report = run_test_suite(server_cmd, cwd=cwd_path)
+        click.echo(json_mod.dumps(report.to_dict(), indent=2))
+        if report.failed > 0:
+            raise SystemExit(1)
+        return
+
+    console.print(f"\n[bold]🧪 Testing MCP server: [cyan]{cmd}[/cyan][/bold]\n")
 
     report = run_test_suite(server_cmd, cwd=cwd_path)
     print_report(report, console)

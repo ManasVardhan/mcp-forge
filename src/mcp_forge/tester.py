@@ -23,6 +23,15 @@ class TestResult:
     message: str = ""
     response: dict[str, Any] | None = None
 
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize this result for JSON output."""
+        return {
+            "name": self.name,
+            "passed": self.passed,
+            "message": self.message,
+            "response": self.response,
+        }
+
 
 @dataclass
 class TestReport:
@@ -43,6 +52,15 @@ class TestReport:
     @property
     def total(self) -> int:
         return len(self.results)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize the full report for JSON output."""
+        return {
+            "passed": self.passed,
+            "failed": self.failed,
+            "total": self.total,
+            "results": [r.to_dict() for r in self.results],
+        }
 
 
 class MCPTestClient:

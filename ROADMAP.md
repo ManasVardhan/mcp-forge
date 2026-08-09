@@ -17,6 +17,12 @@ The `new` command accepts `--prompts` to scaffold MCP prompt definitions: a gene
 ### 🩺 Live Protocol Validation (v0.1)
 `mcp-forge validate --cmd` boots the server over stdio and validates its live responses against the MCP schemas: initialize handshake, tools/resources/prompts list payloads, duplicate names, and capability/reality mismatches. A `--json` flag emits a CI-friendly report with a nonzero exit code on errors.
 
+### 🐍 Python 3.9 Support for Generated Servers (v0.1)
+Scaffolded servers now use plain if/elif dispatch instead of match statements, so generated projects run on Python 3.9 and newer, matching mcp-forge's own floor. Generated pyproject files declare `requires-python = ">=3.9"`, CI tests 3.9 through 3.13, and a regression test parses every generated file at the 3.9 feature level.
+
+### 🧾 JSON Test Reports (v0.1)
+`mcp-forge test --cmd ... --json` emits the full test report as JSON (pass/fail counts, per-result messages, raw JSON-RPC responses) with a nonzero exit code on failures, matching the CI-friendly output of `validate --json`.
+
 ## v0.2 (Planned)
 
 ### 🏪 Template Marketplace

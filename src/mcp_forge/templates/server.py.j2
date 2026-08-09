@@ -42,45 +42,44 @@ class MCPServer:
             }
 
     async def _dispatch(self, method: str, params: dict[str, Any]) -> Any:
-        match method:
-            case "initialize":
-                return {
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {
-                        "tools": {"listChanged": False},
-                        {% if resources %}
-                        "resources": {"subscribe": False, "listChanged": False},
-                        {% endif %}
-                        {% if prompts %}
-                        "prompts": {"listChanged": False},
-                        {% endif %}
-                    },
-                    "serverInfo": self.server_info,
-                }
-            case "tools/list":
-                return {"tools": TOOLS}
-            case "tools/call":
-                return await handle_tool_call(
-                    params.get("name", ""), params.get("arguments", {})
-                )
-            {% if resources %}
-            case "resources/list":
-                return {"resources": RESOURCES}
-            case "resources/read":
-                return await handle_resource_read(params.get("uri", ""))
-            {% endif %}
-            {% if prompts %}
-            case "prompts/list":
-                return {"prompts": PROMPTS}
-            case "prompts/get":
-                return await handle_get_prompt(
-                    params.get("name", ""), params.get("arguments", {})
-                )
-            {% endif %}
-            case "ping":
-                return {}
-            case _:
-                raise ValueError(f"Unknown method: {method}")
+        # Plain if/elif dispatch keeps generated servers compatible with Python 3.9.
+        if method == "initialize":
+            return {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {
+                    "tools": {"listChanged": False},
+                    {% if resources %}
+                    "resources": {"subscribe": False, "listChanged": False},
+                    {% endif %}
+                    {% if prompts %}
+                    "prompts": {"listChanged": False},
+                    {% endif %}
+                },
+                "serverInfo": self.server_info,
+            }
+        if method == "tools/list":
+            return {"tools": TOOLS}
+        if method == "tools/call":
+            return await handle_tool_call(
+                params.get("name", ""), params.get("arguments", {})
+            )
+        {% if resources %}
+        if method == "resources/list":
+            return {"resources": RESOURCES}
+        if method == "resources/read":
+            return await handle_resource_read(params.get("uri", ""))
+        {% endif %}
+        {% if prompts %}
+        if method == "prompts/list":
+            return {"prompts": PROMPTS}
+        if method == "prompts/get":
+            return await handle_get_prompt(
+                params.get("name", ""), params.get("arguments", {})
+            )
+        {% endif %}
+        if method == "ping":
+            return {}
+        raise ValueError(f"Unknown method: {method}")
 
 
 # Module-level instance for convenience
