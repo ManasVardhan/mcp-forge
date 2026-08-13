@@ -8,7 +8,7 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
-[![PyPI](https://img.shields.io/badge/pypi-v0.1.0-orange.svg)]()
+[![PyPI](https://img.shields.io/badge/pypi-v0.1.1-orange.svg)]()
 
 ---
 
@@ -21,6 +21,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 ## Features
 
 - 🏗️ **Scaffold** full MCP server projects (tools, resources, prompts) in one command
+- ➕ **Grow** existing projects: `mcp-forge add tool` wires up new tools and their tests
 - 🔥 **Hot reload** dev server that restarts on file changes
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
 - 🔍 **Validate** server compliance against the MCP specification, statically and live over stdio
@@ -61,6 +62,17 @@ my-server/
 └── tests/
     └── test_my_server.py
 ```
+
+### Add tools later
+
+Projects grow. Add tools to an existing project without hand-editing boilerplate:
+
+```bash
+cd my-server
+mcp-forge add tool forecast alerts
+```
+
+Each new tool gets a registry entry with input schema, a dispatch branch, a handler stub, and a generated test. The harness's expected tool list is updated too, so `pytest` keeps passing while you fill in the real logic. Duplicate names and hand-mangled files are rejected with clear errors instead of corrupted code.
 
 ### Test your server
 

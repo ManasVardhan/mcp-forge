@@ -23,7 +23,13 @@ Scaffolded servers now use plain if/elif dispatch instead of match statements, s
 ### 🧾 JSON Test Reports (v0.1)
 `mcp-forge test --cmd ... --json` emits the full test report as JSON (pass/fail counts, per-result messages, raw JSON-RPC responses) with a nonzero exit code on failures, matching the CI-friendly output of `validate --json`.
 
+### ➕ Add Tools to Existing Projects (v0.1)
+The `mcp-forge add tool` command grows a scaffolded project in place: each new tool gets a TOOLS registry entry with input schema, a dispatch branch, a handler stub, and a generated harness test, with the expected tools/list assertion updated so pytest keeps passing. Duplicate names, invalid names, and hand-mangled files are rejected with clear errors.
+
 ## v0.2 (Planned)
+
+### ➕ Add Resources and Prompts
+Extend `mcp-forge add` to cover resources and prompts, including server capability wiring for prompts.
 
 ### 🏪 Template Marketplace
 Browse and install community-contributed MCP server templates. Publish your own templates with `mcp-forge publish`.

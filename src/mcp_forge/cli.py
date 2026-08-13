@@ -73,6 +73,42 @@ def new(name: str, tools: str, resources: str, prompts: str, description: str, a
     console.print()
 
 
+@cli.command()
+@click.argument("kind", type=click.Choice(["tool"]))
+@click.argument("names", nargs=-1, required=True)
+@click.option("--project-dir", type=click.Path(exists=True), default=".",
+              help="Root of the scaffolded project (default: current directory).")
+def add(kind: str, names: tuple[str, ...], project_dir: str) -> None:
+    """Add tools to an existing scaffolded project.
+
+    Updates the generated tools.py (registry entry, dispatch branch,
+    handler stub) and keeps the generated test harness in sync.
+
+    Example: mcp-forge add tool forecast alerts
+    """
+    from .augment import AugmentError, add_tools
+
+    try:
+        report = add_tools(Path(project_dir), list(names))
+    except AugmentError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise SystemExit(1)
+
+    added = ", ".join(report.added)
+    console.print(
+        f"\n[green]✓[/green] Added {kind}(s) [cyan]{added}[/cyan] "
+        f"to package [bold]{report.package}[/bold]"
+    )
+    for path in report.changed_files:
+        console.print(f"  [dim]updated[/dim] {path}")
+    for note in report.notes:
+        console.print(f"  [yellow]![/yellow] {note}")
+    console.print("\n[dim]Next steps:[/dim]")
+    console.print("  pytest  [dim]# the new tool has a generated test[/dim]")
+    console.print("  # then implement the real logic in the _tool_ handler")
+    console.print()
+
+
 def _print_tree(path: Path, prefix: str = "", is_last: bool = True) -> None:
     """Print a directory tree."""
     entries = sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name))
