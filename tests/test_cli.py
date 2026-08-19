@@ -9,7 +9,8 @@ def test_cli_version():
     runner = CliRunner()
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    assert "0.1.1" in result.output
+    from mcp_forge import __version__
+    assert __version__ in result.output
 
 
 def test_cli_new(tmp_path):

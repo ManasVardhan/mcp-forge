@@ -74,22 +74,30 @@ def new(name: str, tools: str, resources: str, prompts: str, description: str, a
 
 
 @cli.command()
-@click.argument("kind", type=click.Choice(["tool"]))
+@click.argument("kind", type=click.Choice(["tool", "resource", "prompt"]))
 @click.argument("names", nargs=-1, required=True)
 @click.option("--project-dir", type=click.Path(exists=True), default=".",
               help="Root of the scaffolded project (default: current directory).")
 def add(kind: str, names: tuple[str, ...], project_dir: str) -> None:
-    """Add tools to an existing scaffolded project.
+    """Add tools, resources, or prompts to an existing scaffolded project.
 
-    Updates the generated tools.py (registry entry, dispatch branch,
-    handler stub) and keeps the generated test harness in sync.
+    Updates the generated package module (registry entry, dispatch
+    branch, handler stub), wires the server capability when missing,
+    and keeps the generated test harness in sync.
 
-    Example: mcp-forge add tool forecast alerts
+    Examples:
+
+        mcp-forge add tool forecast alerts
+
+        mcp-forge add resource docs://readme
+
+        mcp-forge add prompt summarize
     """
-    from .augment import AugmentError, add_tools
+    from .augment import AugmentError, add_prompts, add_resources, add_tools
 
+    adders = {"tool": add_tools, "resource": add_resources, "prompt": add_prompts}
     try:
-        report = add_tools(Path(project_dir), list(names))
+        report = adders[kind](Path(project_dir), list(names))
     except AugmentError as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise SystemExit(1)
@@ -104,8 +112,13 @@ def add(kind: str, names: tuple[str, ...], project_dir: str) -> None:
     for note in report.notes:
         console.print(f"  [yellow]![/yellow] {note}")
     console.print("\n[dim]Next steps:[/dim]")
-    console.print("  pytest  [dim]# the new tool has a generated test[/dim]")
-    console.print("  # then implement the real logic in the _tool_ handler")
+    console.print(f"  pytest  [dim]# the new {kind} has a generated test[/dim]")
+    if kind == "tool":
+        console.print("  # then implement the real logic in the _tool_ handler")
+    elif kind == "prompt":
+        console.print("  # then shape the messages in the _prompt_ handler")
+    else:
+        console.print("  # then serve real content from handle_resource_read")
     console.print()
 
 

@@ -21,7 +21,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 ## Features
 
 - 🏗️ **Scaffold** full MCP server projects (tools, resources, prompts) in one command
-- ➕ **Grow** existing projects: `mcp-forge add tool` wires up new tools and their tests
+- ➕ **Grow** existing projects: `mcp-forge add tool|resource|prompt` wires up new capabilities and their tests
 - 🔥 **Hot reload** dev server that restarts on file changes
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
 - 🔍 **Validate** server compliance against the MCP specification, statically and live over stdio
@@ -63,16 +63,18 @@ my-server/
     └── test_my_server.py
 ```
 
-### Add tools later
+### Add tools, resources, and prompts later
 
-Projects grow. Add tools to an existing project without hand-editing boilerplate:
+Projects grow. Add tools, resources, or prompts to an existing project without hand-editing boilerplate:
 
 ```bash
 cd my-server
 mcp-forge add tool forecast alerts
+mcp-forge add resource docs://readme
+mcp-forge add prompt summarize
 ```
 
-Each new tool gets a registry entry with input schema, a dispatch branch, a handler stub, and a generated test. The harness's expected tool list is updated too, so `pytest` keeps passing while you fill in the real logic. Duplicate names and hand-mangled files are rejected with clear errors instead of corrupted code.
+Each new tool gets a registry entry with input schema, a dispatch branch, a handler stub, and a generated test. Resources get a registry entry plus read tests; prompts get a definition, dispatch branch, handler stub, and get tests. If the project was scaffolded without resources or prompts, the server capability is wired into `server.py` automatically (import, initialize capabilities, and dispatch branches). The harness's expected lists are updated too, so `pytest` keeps passing while you fill in the real logic. Duplicate names, invalid names or URIs, and hand-mangled files are rejected with clear errors instead of corrupted code.
 
 ### Test your server
 

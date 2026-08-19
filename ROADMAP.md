@@ -26,10 +26,10 @@ Scaffolded servers now use plain if/elif dispatch instead of match statements, s
 ### ➕ Add Tools to Existing Projects (v0.1)
 The `mcp-forge add tool` command grows a scaffolded project in place: each new tool gets a TOOLS registry entry with input schema, a dispatch branch, a handler stub, and a generated harness test, with the expected tools/list assertion updated so pytest keeps passing. Duplicate names, invalid names, and hand-mangled files are rejected with clear errors.
 
-## v0.2 (Planned)
+### ➕ Add Resources and Prompts (v0.2)
+`mcp-forge add resource` and `mcp-forge add prompt` grow scaffolded projects in place: resources get RESOURCES registry entries with derived names, prompts get PROMPTS definitions with dispatch branches and handler stubs. Projects scaffolded without either capability get server.py wired automatically (import, initialize capabilities, dispatch branches before ping). Generated tests are extended or appended so pytest keeps passing, and invalid URIs, duplicate entries, and hand-mangled files are rejected with clear errors.
 
-### ➕ Add Resources and Prompts
-Extend `mcp-forge add` to cover resources and prompts, including server capability wiring for prompts.
+## v0.2 (Planned)
 
 ### 🏪 Template Marketplace
 Browse and install community-contributed MCP server templates. Publish your own templates with `mcp-forge publish`.

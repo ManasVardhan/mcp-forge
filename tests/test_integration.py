@@ -112,7 +112,8 @@ class TestCLIIntegration:
             capture_output=True, text=True, timeout=10,
         )
         assert result.returncode == 0
-        assert "0.1.1" in result.stdout
+        from mcp_forge import __version__
+        assert __version__ in result.stdout
 
     def test_subprocess_new(self, tmp_path: Path) -> None:
         """mcp-forge new should work as subprocess."""

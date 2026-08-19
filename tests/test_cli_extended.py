@@ -24,7 +24,7 @@ class TestCLIGroup:
         assert __version__ in result.output
 
     def test_version_matches(self) -> None:
-        assert __version__ == "0.1.1"
+        assert __version__ == "0.2.0"
 
 
 class TestNewCommand:
