@@ -723,5 +723,133 @@ def register(project_dir: str, server_name: str | None, cmd: str | None,
         console.print("[dim]Restart Claude Desktop to pick up the change.[/dim]")
 
 
+@cli.group()
+def template() -> None:
+    """Browse and install MCP server templates from a registry."""
+
+
+@template.command("list")
+@click.option("--registry", default=None,
+              help="Registry source: a local path or HTTP(S) URL. Defaults to the builtin registry.")
+@click.option("--json", "json_output", is_flag=True, help="Output as JSON.")
+def template_list(registry: str | None, json_output: bool) -> None:
+    """List available templates.
+
+    Example: mcp-forge template list
+    """
+    import json as json_mod
+
+    from .marketplace import MarketplaceError, load_registry
+
+    try:
+        templates = load_registry(registry)
+    except MarketplaceError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise SystemExit(1)
+
+    if json_output:
+        click.echo(json_mod.dumps([t.to_dict() for t in templates], indent=2))
+        return
+
+    source_label = registry or "builtin registry"
+    console.print(f"\n[bold]Templates in {source_label}:[/bold]\n")
+    if not templates:
+        console.print("  [dim]No templates found.[/dim]\n")
+        return
+    for t in templates:
+        caps = []
+        if t.tools:
+            caps.append(f"{len(t.tools)} tool{'s' if len(t.tools) != 1 else ''}")
+        if t.resources:
+            caps.append(f"{len(t.resources)} resource{'s' if len(t.resources) != 1 else ''}")
+        if t.prompts:
+            caps.append(f"{len(t.prompts)} prompt{'s' if len(t.prompts) != 1 else ''}")
+        cap_label = ", ".join(caps) or "empty"
+        console.print(f"  [cyan]{t.name}[/cyan] [dim]v{t.version}[/dim] ({cap_label})")
+        if t.description:
+            console.print(f"    {t.description}")
+    console.print()
+    console.print("[dim]Install one with: mcp-forge template install <name> [project-name][/dim]")
+    console.print()
+
+
+@template.command("show")
+@click.argument("name")
+@click.option("--registry", default=None,
+              help="Registry source: a local path or HTTP(S) URL. Defaults to the builtin registry.")
+@click.option("--json", "json_output", is_flag=True, help="Output as JSON.")
+def template_show(name: str, registry: str | None, json_output: bool) -> None:
+    """Show one template in detail.
+
+    Example: mcp-forge template show api-client
+    """
+    import json as json_mod
+
+    from .marketplace import MarketplaceError, get_template
+
+    try:
+        t = get_template(name, registry)
+    except MarketplaceError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise SystemExit(1)
+
+    if json_output:
+        click.echo(json_mod.dumps(t.to_dict(), indent=2))
+        return
+
+    console.print(f"\n[bold cyan]{t.name}[/bold cyan] [dim]v{t.version}[/dim]")
+    if t.description:
+        console.print(f"  {t.description}")
+    if t.author:
+        console.print(f"  [dim]Author:[/dim] {t.author}")
+    console.print(f"  [dim]Tools:[/dim] {', '.join(t.tools) or '(none)'}")
+    console.print(f"  [dim]Resources:[/dim] {', '.join(t.resources) or '(none)'}")
+    console.print(f"  [dim]Prompts:[/dim] {', '.join(t.prompts) or '(none)'}")
+    if t.extra_files:
+        console.print(f"  [dim]Extra files:[/dim] {', '.join(sorted(t.extra_files))}")
+    console.print()
+
+
+@template.command("install")
+@click.argument("name")
+@click.argument("project_name", required=False, default=None)
+@click.option("--registry", default=None,
+              help="Registry source: a local path or HTTP(S) URL. Defaults to the builtin registry.")
+@click.option("--output-dir", "-o", type=click.Path(), default=".", help="Output directory.")
+@click.option("--author", "-a", default="", help="Author name override.")
+@click.option("--description", "-d", default="", help="Project description override.")
+def template_install(name: str, project_name: str | None, registry: str | None,
+                     output_dir: str, author: str, description: str) -> None:
+    """Install a template as a new MCP server project.
+
+    Example: mcp-forge template install api-client my-weather-api
+    """
+    from .marketplace import MarketplaceError, install_template
+
+    label = project_name or name
+    console.print(f"\n[bold]🔨 Installing template [cyan]{name}[/cyan] as [cyan]{label}[/cyan][/bold]\n")
+
+    try:
+        project_path = install_template(
+            name,
+            project_name=project_name,
+            source=registry,
+            output_dir=Path(output_dir),
+            author=author,
+            description=description,
+        )
+    except (MarketplaceError, ValueError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise SystemExit(1)
+
+    console.print(f"[green]✓[/green] Project created at [bold]{project_path}[/bold]\n")
+    console.print("[dim]Next steps:[/dim]")
+    console.print(f"  cd {project_path.name}")
+    console.print(r"  pip install -e '.\[dev]'")
+    console.print("  pytest  [dim]# run the generated test harness[/dim]")
+    console.print(f"  mcp-forge test --cmd 'python -m {project_path.name.replace('-', '_')}.server'")
+    console.print()
+
+
 if __name__ == "__main__":
     cli()

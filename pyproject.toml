@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-server-forge"
-version = "0.2.0"
+version = "0.3.0"
 description = "Scaffold, test, and publish Model Context Protocol (MCP) servers in seconds"
 readme = "README.md"
 license = "MIT"

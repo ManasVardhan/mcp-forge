@@ -21,6 +21,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 ## Features
 
 - 🏗️ **Scaffold** full MCP server projects (tools, resources, prompts) in one command
+- 🏪 **Template marketplace**: browse and install ready-made server templates from the builtin, a local, or an HTTP registry
 - ➕ **Grow** existing projects: `mcp-forge add tool|resource|prompt` wires up new capabilities and their tests
 - 🔥 **Hot reload** dev server that restarts on file changes
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
@@ -214,6 +215,43 @@ MCP Forge uses Jinja2 templates internally. Each generated file comes from a tem
 | `project_readme.md.j2` | Project README |
 | `dockerfile.j2` | Docker container config |
 | `init.py.j2` | Package init file |
+
+## Template Marketplace
+
+Start from a ready-made server template instead of a blank scaffold:
+
+```bash
+mcp-forge template list                        # Browse available templates
+mcp-forge template show api-client             # Inspect one template
+mcp-forge template install api-client my-api   # Install as a new project
+```
+
+Builtin templates:
+
+| Template | What you get |
+|----------|--------------|
+| `starter` | Minimal server with a single hello tool |
+| `api-client` | fetch and search tools plus a config resource, for wrapping HTTP APIs |
+| `knowledge-base` | lookup tool, doc resources, and summarize plus answer prompts |
+
+Installed projects are normal scaffolded servers: the generated pytest
+harness passes out of the box, and templates can ship extra files (like
+setup notes) into the project.
+
+Registries are plain JSON, so you can host your own and point at it with
+`--registry`:
+
+```bash
+mcp-forge template list --registry ./my-registry.json
+mcp-forge template install team-server --registry https://example.com/registry.json
+```
+
+A registry is an object with a `templates` list; each template has a
+`name`, `version`, `description`, `author`, its `tools`, `resources`,
+and `prompts`, and optional `extra_files` (relative paths mapped to file
+content, with `{{project_name}}` and `{{pkg_name}}` placeholders). Also
+available in Python via `mcp_forge.marketplace`: `load_registry`,
+`get_template`, and `install_template`.
 
 ## Testing
 

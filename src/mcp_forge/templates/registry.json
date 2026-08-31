@@ -1,0 +1,39 @@
+{
+  "registry_version": 1,
+  "templates": [
+    {
+      "name": "starter",
+      "version": "1.0.0",
+      "description": "Minimal MCP server with a single hello tool. The best starting point for a custom server.",
+      "author": "mcp-forge",
+      "tools": ["hello"],
+      "resources": [],
+      "prompts": [],
+      "extra_files": {}
+    },
+    {
+      "name": "api-client",
+      "version": "1.0.0",
+      "description": "Wrap a third-party HTTP API as MCP tools: fetch and search tools plus a config resource.",
+      "author": "mcp-forge",
+      "tools": ["fetch_url", "search"],
+      "resources": ["config://settings"],
+      "prompts": [],
+      "extra_files": {
+        "TEMPLATE_NOTES.md": "# {{project_name}} (api-client template)\n\nThis project was installed from the mcp-forge api-client template.\n\nNext steps:\n\n1. Implement `fetch_url` and `search` in `src/{{pkg_name}}/tools.py` against your API.\n2. Put API base URL and settings behind the `config://settings` resource in `src/{{pkg_name}}/resources.py`.\n3. Keep secrets out of the resource payload. Read keys from environment variables inside the tool handlers instead.\n4. Run `pytest`, then `mcp-forge test --cmd 'python -m {{pkg_name}}.server'`.\n"
+      }
+    },
+    {
+      "name": "knowledge-base",
+      "version": "1.0.0",
+      "description": "Expose documents to LLM clients: a lookup tool, doc resources, and summarize plus answer prompts.",
+      "author": "mcp-forge",
+      "tools": ["lookup"],
+      "resources": ["docs://index", "docs://page"],
+      "prompts": ["summarize_doc", "answer_from_docs"],
+      "extra_files": {
+        "TEMPLATE_NOTES.md": "# {{project_name}} (knowledge-base template)\n\nThis project was installed from the mcp-forge knowledge-base template.\n\nNext steps:\n\n1. Point `docs://index` and `docs://page` in `src/{{pkg_name}}/resources.py` at your document store.\n2. Implement `lookup` in `src/{{pkg_name}}/tools.py` to search that store.\n3. Tune the `summarize_doc` and `answer_from_docs` prompts in `src/{{pkg_name}}/prompts.py`.\n4. Run `pytest`, then `mcp-forge test --cmd 'python -m {{pkg_name}}.server'`.\n"
+      }
+    }
+  ]
+}
