@@ -22,6 +22,7 @@ Building MCP servers involves too much boilerplate. Every new server needs the s
 
 - 🏗️ **Scaffold** full MCP server projects (tools, resources, prompts) in one command
 - 🏪 **Template marketplace**: browse and install ready-made server templates from the builtin, a local, or an HTTP registry
+- 📤 **Template publishing**: `mcp-forge template publish` turns any scaffolded project into a registry entry others can install
 - ➕ **Grow** existing projects: `mcp-forge add tool|resource|prompt` wires up new capabilities and their tests
 - 🔥 **Hot reload** dev server that restarts on file changes
 - 🧪 **Test** servers with a built-in MCP test harness (JSON-RPC over stdio)
@@ -252,6 +253,27 @@ and `prompts`, and optional `extra_files` (relative paths mapped to file
 content, with `{{project_name}}` and `{{pkg_name}}` placeholders). Also
 available in Python via `mcp_forge.marketplace`: `load_registry`,
 `get_template`, and `install_template`.
+
+### Publishing templates
+
+Turn any scaffolded project into a shareable template without
+hand-writing registry JSON:
+
+```bash
+mcp-forge template publish ./my-weather-api -r team-registry.json
+mcp-forge template publish ./my-weather-api -r team-registry.json \
+    -n wx-starter -i NOTES.md -i docs/usage.md   # rename + embed extra files
+```
+
+`publish` reads the project name, version, description, and author from
+`pyproject.toml`, scans the source for its tools, resources, and
+prompts, and writes the entry into the registry file (created if
+missing). Files passed with `--include` are embedded with the project
+name swapped for `{{project_name}}`/`{{pkg_name}}` placeholders, so
+installs re-render them under the new name. Existing entries are
+preserved; republishing the same name requires `--force`. Use `--json`
+to print the published entry. In Python:
+`build_template_from_project` and `publish_template`.
 
 ## Testing
 

@@ -32,13 +32,22 @@ Registry format:
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from importlib import resources as importlib_resources
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from .augment import (
+    AugmentError,
+    existing_prompt_names,
+    existing_resource_uris,
+    existing_tool_names,
+    find_package_dir,
+)
 from .scaffold import scaffold_project, snake_case, validate_project_name
 
 REGISTRY_VERSION = 1
@@ -249,3 +258,174 @@ def install_template(
         dest.write_text(_render_placeholders(content, project_name), encoding="utf-8")
 
     return project_root
+
+
+# ---------------------------------------------------------------------------
+# template publish
+# ---------------------------------------------------------------------------
+
+_PYPROJECT_NAME_RE = re.compile(r'^name\s*=\s*"([^"]+)"', re.MULTILINE)
+_PYPROJECT_VERSION_RE = re.compile(r'^version\s*=\s*"([^"]+)"', re.MULTILINE)
+_PYPROJECT_DESC_RE = re.compile(r'^description\s*=\s*"([^"]+)"', re.MULTILINE)
+_PYPROJECT_AUTHOR_RE = re.compile(
+    r'^authors\s*=\s*\[\s*\{\s*name\s*=\s*"([^"]+)"', re.MULTILINE
+)
+
+
+def _extract_placeholders(content: str, project_name: str) -> str:
+    """Reverse placeholder rendering so installs can re-parameterize.
+
+    Occurrences of the project name and its package name are replaced
+    with {{project_name}} and {{pkg_name}} respectively.
+    """
+    pkg = snake_case(project_name)
+    content = content.replace(project_name, "{{project_name}}")
+    if pkg != project_name:
+        content = content.replace(pkg, "{{pkg_name}}")
+    return content
+
+
+def build_template_from_project(
+    project_root: Path,
+    name: str | None = None,
+    include: Sequence[str] = (),
+) -> Template:
+    """Build a registry Template from a scaffolded project directory.
+
+    Reads project metadata from pyproject.toml and scans the generated
+    source for tools, resources, and prompts. Files listed in ``include``
+    are embedded as extra_files with the project name replaced by
+    placeholders so installs can rename them.
+
+    Args:
+        project_root: Root of a project created by ``mcp-forge new``.
+        name: Template name override. Defaults to the project name.
+        include: Project-relative paths of extra files to embed.
+
+    Returns:
+        A Template ready to publish.
+
+    Raises:
+        MarketplaceError: If the project layout, metadata, or include
+            paths are invalid.
+    """
+    project_root = Path(project_root)
+    pyproject_path = project_root / "pyproject.toml"
+    if not pyproject_path.is_file():
+        raise MarketplaceError(
+            f"No pyproject.toml found in {project_root}. "
+            "Run this on a project created by 'mcp-forge new'."
+        )
+    toml_text = pyproject_path.read_text(encoding="utf-8")
+    name_match = _PYPROJECT_NAME_RE.search(toml_text)
+    if not name_match:
+        raise MarketplaceError(
+            f"Could not read a project name from {pyproject_path}."
+        )
+    project_name = name_match.group(1)
+
+    try:
+        package_dir = find_package_dir(project_root)
+    except AugmentError as exc:
+        raise MarketplaceError(str(exc))
+
+    tools = existing_tool_names(
+        (package_dir / "tools.py").read_text(encoding="utf-8")
+    )
+    resources_path = package_dir / "resources.py"
+    resources = (
+        existing_resource_uris(resources_path.read_text(encoding="utf-8"))
+        if resources_path.is_file()
+        else []
+    )
+    prompts_path = package_dir / "prompts.py"
+    prompts = (
+        existing_prompt_names(prompts_path.read_text(encoding="utf-8"))
+        if prompts_path.is_file()
+        else []
+    )
+
+    extra_files: dict[str, str] = {}
+    for rel_path in include:
+        source_path = _safe_project_path(project_root, rel_path)
+        if not source_path.is_file():
+            raise MarketplaceError(
+                f"Included file '{rel_path}' does not exist in {project_root}."
+            )
+        try:
+            content = source_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            raise MarketplaceError(
+                f"Included file '{rel_path}' is not UTF-8 text. "
+                "Templates can only ship text files."
+            )
+        key = Path(rel_path).as_posix()
+        extra_files[key] = _extract_placeholders(content, project_name)
+
+    version_match = _PYPROJECT_VERSION_RE.search(toml_text)
+    desc_match = _PYPROJECT_DESC_RE.search(toml_text)
+    author_match = _PYPROJECT_AUTHOR_RE.search(toml_text)
+
+    return Template(
+        name=name or project_name,
+        version=version_match.group(1) if version_match else "1.0.0",
+        description=desc_match.group(1) if desc_match else "",
+        author=author_match.group(1) if author_match else "",
+        tools=tools,
+        resources=resources,
+        prompts=prompts,
+        extra_files=extra_files,
+    )
+
+
+def publish_template(
+    template: Template,
+    registry_path: Path,
+    force: bool = False,
+) -> Path:
+    """Add or replace a template entry in a local registry file.
+
+    The registry file is created if it does not exist. Existing entries
+    are preserved; an entry with the same name is only replaced when
+    ``force`` is true.
+
+    Args:
+        template: The template to publish.
+        registry_path: Local registry JSON file to write.
+        force: Replace an existing entry with the same name.
+
+    Returns:
+        The registry path that was written.
+
+    Raises:
+        MarketplaceError: If the existing registry is malformed or the
+            template name is already taken and force is false.
+    """
+    registry_path = Path(registry_path)
+    existing = load_registry(str(registry_path)) if registry_path.is_file() else []
+
+    published: list[Template] = []
+    replaced = False
+    for entry in existing:
+        if entry.name == template.name:
+            if not force:
+                raise MarketplaceError(
+                    f"Template '{template.name}' already exists in "
+                    f"{registry_path}. Use --force to replace it."
+                )
+            published.append(template)
+            replaced = True
+        else:
+            published.append(entry)
+    if not replaced:
+        published.append(template)
+
+    payload = {
+        "registry_version": REGISTRY_VERSION,
+        "templates": [entry.to_dict() for entry in published],
+    }
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry_path.write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
+    return registry_path

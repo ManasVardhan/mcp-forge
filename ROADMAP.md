@@ -32,10 +32,13 @@ The `mcp-forge add tool` command grows a scaffolded project in place: each new t
 ### 🏪 Template Marketplace (v0.2)
 Browse and install MCP server templates with `mcp-forge template list`, `show`, and `install`. Templates come from the builtin registry (starter, api-client, knowledge-base), a local registry file, or an HTTP(S) registry URL, so teams can host their own. Templates parameterize the scaffolder (tools, resources, prompts) and can ship extra files with project name placeholders; installed projects pass the generated pytest harness out of the box.
 
-## v0.3 (Planned)
+### 📤 Template Publishing (v0.3)
+`mcp-forge template publish` packages a scaffolded project into a registry entry: project metadata read from pyproject.toml, tools/resources/prompts scanned from the source, and `--include` files embedded with project name placeholders so installs re-render them. Entries land in a local registry JSON file (created if missing, existing entries preserved, `--force` to replace), ready for `template install --registry`.
 
-### 📤 Template Publishing
-Package a project or template directory into a registry entry with `mcp-forge template publish`, so community templates can be shared without hand-writing registry JSON.
+## v0.4 (Planned)
+
+### 🩹 Doctor Command
+`mcp-forge doctor` diagnoses a scaffolded project in place: missing dev dependencies, drift between registered capabilities and server.py wiring, stale generated tests, and Python version compatibility, with actionable fix suggestions.
 
 ---
 

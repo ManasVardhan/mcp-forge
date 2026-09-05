@@ -851,5 +851,57 @@ def template_install(name: str, project_name: str | None, registry: str | None,
     console.print()
 
 
+@template.command("publish")
+@click.argument("project_root", type=click.Path(exists=True, file_okay=False))
+@click.option("--registry", "-r", "registry_path", required=True, type=click.Path(),
+              help="Local registry JSON file to publish into (created if missing).")
+@click.option("--name", "-n", "template_name", default=None,
+              help="Template name override. Defaults to the project name.")
+@click.option("--include", "-i", "includes", multiple=True,
+              help="Project-relative extra file to embed in the template (repeatable).")
+@click.option("--force", is_flag=True,
+              help="Replace an existing template with the same name.")
+@click.option("--json", "json_output", is_flag=True, help="Output the published entry as JSON.")
+def template_publish(project_root: str, registry_path: str, template_name: str | None,
+                     includes: tuple[str, ...], force: bool, json_output: bool) -> None:
+    """Publish a scaffolded project as a template in a local registry.
+
+    Scans the project for its tools, resources, and prompts, embeds any
+    --include files with project name placeholders, and writes the entry
+    into the registry JSON file so others can install it.
+
+    Example: mcp-forge template publish ./my-weather-api -r registry.json
+    """
+    import json as json_mod
+
+    from .marketplace import (
+        MarketplaceError,
+        build_template_from_project,
+        publish_template,
+    )
+
+    try:
+        entry = build_template_from_project(
+            Path(project_root), name=template_name, include=list(includes)
+        )
+        written = publish_template(entry, Path(registry_path), force=force)
+    except MarketplaceError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise SystemExit(1)
+
+    if json_output:
+        click.echo(json_mod.dumps(entry.to_dict(), indent=2))
+        return
+
+    caps = (f"{len(entry.tools)} tools, {len(entry.resources)} resources, "
+            f"{len(entry.prompts)} prompts, {len(entry.extra_files)} extra files")
+    console.print(f"\n[green]✓[/green] Published [cyan]{entry.name}[/cyan] "
+                  f"[dim]v{entry.version}[/dim] ({caps})")
+    console.print(f"  Registry: [bold]{written}[/bold]\n")
+    console.print("[dim]Install it with:[/dim]")
+    console.print(f"  mcp-forge template install {entry.name} --registry {written}")
+    console.print()
+
+
 if __name__ == "__main__":
     cli()
